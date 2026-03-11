@@ -5,115 +5,121 @@
     <title>Список товаров | Маркетплейс</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .card-img-top {
-            height: 200px;
-            object-fit: cover;
-        }
+        .card-img-top { height: 200px; object-fit: cover; }
+        .badge-status { position: absolute; top: 10px; right: 10px; }
     </style>
 </head>
 <body class="bg-light">
 
-<!-- Навигационная панель -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
     <div class="container-fluid">
-        <a class="navbar-brand" th:href="@{/index}">Маркетплейс</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <a class="navbar-brand fw-bold" th:href="@{/}">MARKETPLACE</a>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <!-- Общая для всех ссылка на главную -->
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/index}">ГЛАВНАЯ</a>
-                </li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
 
-                <!-- Блок для неаутентифицированных пользователей -->
                 <li class="nav-item" sec:authorize="isAnonymous()">
-                    <a class="nav-link" th:href="@{/login}">ВОЙТИ</a>
+                    <a class="nav-link btn btn-outline-light btn-sm ms-lg-2" th:href="@{/login}">ВОЙТИ</a>
                 </li>
 
-                <!-- Блок для аутентифицированных пользователей -->
                 <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА</a>
+                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА <span class="badge bg-primary" th:text="${cartItemsCount}">0</span></a>
                 </li>
 
-                <!-- Пункты, специфичные для ролей (появляются только у аутентифицированных) -->
-                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
-                    <a class="nav-link" th:href="@{/consumer/orders}">Заказы</a>
-                </li>
-                <li class="nav-item" sec:authorize="hasRole('SELLER')">
-                    <a class="nav-link" th:href="@{/seller/orders}">Заказы</a>
-                </li>
-                <li class="nav-item" sec:authorize="hasRole('SUPPORT')">
-                    <a class="nav-link" th:href="@{/support/orders}">Заказы</a>
-                </li>
-
-                <!-- Профиль для продавца -->
-                <li class="nav-item" sec:authorize="hasRole('SELLER')">
-                    <a class="nav-link" th:href="@{/seller/profile}">ПРОФИЛЬ</a>
-                </li>
-                <!-- Профиль для покупателя -->
-                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
-                    <a class="nav-link" th:href="@{/consumer/profile}">ПРОФИЛЬ</a>
-                </li>
-                <!-- Профиль для администратора (если нужен) -->
-                <li class="nav-item" sec:authorize="hasRole('SUPPORT')">
-                    <a class="nav-link" th:href="@{/support/profile}">ПРОФИЛЬ</a>
-                </li>
-
-                <!-- Выход для аутентифицированных -->
-                <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/logout}">ВЫЙТИ</a>
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#" id="profileDrop" data-bs-toggle="dropdown">
+                        ЛИЧНЫЙ КАБИНЕТ
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <div sec:authorize="hasRole('CONSUMER')">
+                            <li><a class="dropdown-item" th:href="@{/consumer/profile}">Мой профиль</a></li>
+                            <li><a class="dropdown-item" th:href="@{/consumer/orders}">Мои заказы</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SELLER')">
+                            <li><a class="dropdown-item" th:href="@{/seller/profile}">Панель продавца</a></li>
+                            <li><a class="dropdown-item" th:href="@{/seller/my-goods}">Мои товары</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SUPPORT')">
+                            <li><a class="dropdown-item" th:href="@{/support/profile}">Админ-панель</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/orders}">Модерация товаров</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/questions}">Модерация вопросов</a></li>
+                        </div>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
+                    </ul>
                 </li>
             </ul>
         </div>
     </div>
 </nav>
 
-<!-- Основной контент -->
 <div class="container py-5">
-    <div class="row mb-4">
-        <div class="col">
-            <h1 class="display-5 fw-bold">Список товаров</h1>
-            <p class="lead">Все доступные товары на платформе</p>
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-5 fw-bold">Витрина товаров</h1>
+            <p class="lead text-muted" sec:authorize="isAnonymous()">Войдите, чтобы совершать покупки</p>
+            <p class="lead text-success" sec:authorize="hasRole('SELLER')">Ваши товары проходят модерацию перед появлением здесь</p>
+            <p class="lead text-danger" sec:authorize="hasRole('SUPPORT')">Режим модератора: просмотр активных товаров</p>
         </div>
     </div>
 
-    <!-- Карточки товаров (используется модель с атрибутом "goods") -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" th:if="${not #lists.isEmpty(goods)}">
+    <div class="row row-cols-1 row-cols-md-3 g-4" th:if="${not #lists.isEmpty(goods)}">
         <div class="col" th:each="good : ${goods}">
-            <div class="card h-100 shadow-sm">
-                <!-- Заглушка изображения (замените на реальное поле, если есть) -->
-                <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="Фото товара">
+            <div class="card h-100 shadow-sm border-0">
+
+                <img th:src="${good.imagePath != null ? '/uploads/' + good.imagePath : 'https://via.placeholder.com/300x200'}"
+                     class="card-img-top" alt="Товар">
+
                 <div class="card-body">
-                    <h5 class="card-title" th:text="${good.name}">Название</h5>
-                    <p class="card-text" th:text="${good.description}">Описание</p>
-                    <p class="card-text"><strong>Цена:</strong> <span th:text="${good.price}">100</span> ₽</p>
-                    <p class="card-text">
-                        <small class="text-muted">
-                            Продавец: <span th:text="${good.user != null ? good.user.name : 'Неизвестно'}">Имя</span>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title fw-bold" th:text="${good.name}">Название</h5>
+                        <span class="badge bg-success" th:text="${good.price} + ' ₽'">0 ₽</span>
+                    </div>
+                    <p class="card-text text-truncate" th:text="${good.description}">Описание</p>
+
+                    <div class="mt-3">
+                        <small class="text-muted d-block">
+                            Продавец: <span class="fw-bold" th:text="${good.getSellerName()}">ФИО</span>
                         </small>
-                    </p>
+                        <small class="text-muted">
+                            В наличии: <span th:text="${good.quantity}">0</span> шт.
+                        </small>
+                    </div>
                 </div>
-                <div class="card-footer bg-transparent border-top-0">
-                    <div class="d-grid">
-                        <a href="#" class="btn btn-primary btn-sm">В корзину</a>
+
+                <div class="card-footer bg-white border-top-0 pb-3">
+                    <div class="d-grid gap-2">
+                        <a sec:authorize="isAnonymous()" th:href="@{/login}" class="btn btn-outline-primary">Войти для покупки</a>
+
+                        <form sec:authorize="hasRole('CONSUMER')" th:action="@{/cart/add}" method="post">
+                            <input type="hidden" name="goodsId" th:value="${good.id}">
+                            <button type="submit" class="btn btn-primary w-100" th:disabled="${good.quantity <= 0}">
+                                <span th:text="${good.quantity > 0 ? 'В корзину' : 'Нет в наличии'}"></span>
+                            </button>
+                        </form>
+
+                        <div sec:authorize="hasRole('SELLER')">
+                            <a th:if="${good.user.email == #authentication.name}"
+                               th:href="@{/seller/goods/edit/{id}(id=${good.id})}"
+                               class="btn btn-warning btn-sm w-100">Редактировать мой товар</a>
+                            <span th:unless="${good.user.email == #authentication.name}"
+                                  class="text-muted small d-block text-center">Просмотр (режим продавца)</span>
+                        </div>
+
+                        <div sec:authorize="hasRole('SUPPORT')" class="btn-group">
+                            <a th:href="@{/support/orders}" class="btn btn-info btn-sm text-white">Управление</a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Сообщение, если товаров нет -->
-    <div class="alert alert-info" th:if="${#lists.isEmpty(goods)}" role="alert">
-        На данный момент товары отсутствуют.
+    <div class="alert alert-warning text-center" th:if="${#lists.isEmpty(goods)}">
+        <h3>Товары пока не прошли модерацию</h3>
+        <p>Загляните позже!</p>
     </div>
 </div>
-
-<!-- Подвал (необязательно) -->
-<footer class="bg-dark text-white text-center py-3 mt-5">
-    <p class="mb-0">&copy; 2026 Маркетплейс. Все права защищены.</p>
-</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

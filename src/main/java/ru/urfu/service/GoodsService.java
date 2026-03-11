@@ -3,6 +3,7 @@ package ru.urfu.service;
 import ru.urfu.dto.GoodsDto;
 import ru.urfu.entity.Goods;
 import ru.urfu.entity.GoodsStatus;
+import ru.urfu.entity.User;
 
 import java.util.List;
 
@@ -14,8 +15,9 @@ public interface GoodsService {
     List<GoodsDto> findAllApprovedGoods();
     List<GoodsDto> findAllPendingGoods();
     List<GoodsDto> findGoodsByUserEmail(String email); // Изменили название метода
-    void updateStatus(Long id, GoodsStatus goodsStatus);
     GoodsDto goodsToGoodsDto(Goods goods);
     void updateGoods(GoodsDto goodsDto);
     List<GoodsDto> searchGoods(String name);
+    void importGoods(org.springframework.web.multipart.MultipartFile file, String email); // Массовая загрузка товаров (CSV/Excel)
+    void updateStatus(Long goodsId, GoodsStatus status, User sender);
 }

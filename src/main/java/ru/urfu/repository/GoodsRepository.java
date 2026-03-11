@@ -17,9 +17,15 @@ public interface GoodsRepository extends JpaRepository<Goods, Long> {
 
     List<Goods> findByModerationStatus(GoodsStatus status);
 
+
     List<Goods> findByUserEmail(String email);   // если у товара есть связь с User через поле user
 
     List<Goods> findByNameContainingIgnoreCase(String name);
+
+
+    List<Goods> findByNameContainingIgnoreCaseAndModerationStatus(String keyword, GoodsStatus status);
+    List<Goods> findByPriceBetweenAndModerationStatus(int minPrice, int maxPrice, GoodsStatus status);
+
 
 
 }

@@ -28,6 +28,14 @@ public class Order {
 
     private BigDecimal totalPrice;
 
-    private String status;        // например, "Оплачен", "Отправлен"
+    private String status;// например, "Оплачен", "Отправлен"
 
+
+    public void calculateAndSetTotalPrice() {
+        if (this.goods != null && this.goods.getPrice() != null && this.quantity != 0) {
+            this.totalPrice = this.goods.getPrice().multiply(new BigDecimal(this.quantity));
+        } else {
+            this.totalPrice = null; // или обработка ошибки
+        }
+    }
 }

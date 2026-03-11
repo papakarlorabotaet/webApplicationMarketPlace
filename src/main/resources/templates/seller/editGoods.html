@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактирование товара | MarketPlace</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="/">MarketPlace</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link" href="/seller/profile">Панель продавца</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/seller/my-goods">Мои товары</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">Редактирование товара: <span th:text="${goods.name}" class="text-primary">Название</span></h5>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/seller/goods/edit/{id}(id=${goods.id})}" method="post" enctype="multipart/form-data">
+
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label d-block">Текущее фото</label>
+                                <img th:src="${goods.imagePath != null ? '/uploads/' + goods.imagePath : 'https://via.placeholder.com/200'}"
+                                     class="img-thumbnail mb-2" style="max-height: 200px;" alt="Товар">
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Заменить фото</label>
+                                <input type="file" name="image" class="form-control" accept="image/*">
+                                <div class="form-text">Оставьте пустым, если не хотите менять изображение.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Название товара</label>
+                            <input type="text" name="name" th:value="${goods.name}" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Цена (₽)</label>
+                            <input type="number" step="0.01" name="price" th:value="${goods.price}" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Описание</label>
+                            <textarea name="description" class="form-control" rows="5" th:text="${goods.description}"></textarea>
+                        </div>
+
+                        <hr class="my-4">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Цена (₽)</label>
+                                <input type="number" step="0.01" name="price" th:value="${goods.price}" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Количество на складе</label>
+                                <input type="number" name="quantity" th:value="${goods.quantity}" class="form-control" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                Удалить товар
+                            </button>
+                            <div>
+                                <a href="/seller/my-goods" class="btn btn-outline-secondary me-2">Отмена</a>
+                                <button type="submit" class="btn btn-primary px-4">Сохранить</button>
+                            </div>
+                        </div>
+
+                        <div class="modal fade" id="deleteModal" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Подтверждение удаления</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Вы уверены, что хотите удалить товар "[[${goods.name}]]"? Это действие необратимо.
+                                    </div>
+                                    <div class="modal-footer">
+                                        <form th:action="@{/seller/goods/delete/{id}(id=${goods.id})}" method="post">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                            <button type="submit" class="btn btn-danger">Да, удалить</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

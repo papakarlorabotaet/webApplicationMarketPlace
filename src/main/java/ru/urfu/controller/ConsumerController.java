@@ -24,6 +24,6 @@ public class ConsumerController {
         User user = userRepository.findByEmail(userDetails.getUsername());
         model.addAttribute("user", user);
         model.addAttribute("cartItemsCount", 0); // позже
-        return "consumer/profileConsumer"; // или "consumer/accountConsumer", если файл так называется
+        return "consumer/profileConsumer";
     }
 }

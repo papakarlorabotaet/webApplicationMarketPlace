@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Модерация вопросов</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="/">MarketPlace | Admin</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link" href="/support/profile">Профиль</a></li>
+                <li class="nav-item"><a class="nav-link" href="/support/orders">Товары</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/support/questions">Вопросы</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Модерация вопросов</h2>
+        <span class="badge bg-primary" th:text="${pendingQuestions.size() + ' ожидают проверки'}">0</span>
+    </div>
+
+    <div class="row" th:if="${not #lists.isEmpty(pendingQuestions)}">
+        <div class="col-12" th:each="q : ${pendingQuestions}">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-white d-flex justify-content-between">
+                    <span>Товар: <strong th:text="${q.goods.name}">Товар</strong></span>
+                    <span class="text-muted small" th:text="${#temporals.format(q.createdAt, 'dd.MM.yyyy HH:mm')}">Дата</span>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Вопрос от <span th:text="${q.author.email}">user@mail.ru</span>:</strong></p>
+                    <p class="card-text italic" th:text="${q.text}">Текст вопроса...</p>
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <form th:action="@{/support/questions/reject/{id}(id=${q.id})}" method="post">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Отклонить</button>
+                        </form>
+                        <form th:action="@{/support/questions/approve/{id}(id=${q.id})}" method="post">
+                            <button type="submit" class="btn btn-success btn-sm">Одобрить вопрос</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(pendingQuestions)}" class="alert alert-info text-center py-5">
+        <h4>Все вопросы проверены!</h4>
+        <p class="mb-0">Новых вопросов от покупателей пока нет.</p>
+    </div>
+</main>
+
+</body>
+</html>

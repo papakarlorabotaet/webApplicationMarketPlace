@@ -1,11 +1,16 @@
 package ru.urfu.entity;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Getter
@@ -20,6 +25,8 @@ public class Goods {
     @Column(name = "id")
     private Long id;
 
+    private String imagePath;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // Теперь ссылаемся на общего пользователя
     private User user;
@@ -31,7 +38,12 @@ public class Goods {
     private String description;
 
     @Column(name = "price") //Цена товара
-    private int price;
+    private BigDecimal price;
+
+
+    @Column(name = "quantity") //кол-во товара
+    private Long quantity;
+
 
     @Column(name = "delivery_status")
     private int deliveryStatus; // 0 - собирается, 1 - в пути...
@@ -39,4 +51,8 @@ public class Goods {
     @Enumerated(EnumType.STRING)
     @Column(name = "moderation_status")
     private GoodsStatus moderationStatus = GoodsStatus.PENDING;
+
+    @OneToMany(mappedBy = "goods", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GoodsQuestion> questions = new ArrayList<>();
+
 }

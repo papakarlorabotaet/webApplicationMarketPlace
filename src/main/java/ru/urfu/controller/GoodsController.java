@@ -21,27 +21,27 @@ public class GoodsController {
     @Autowired
     private GoodsService goodsService;
 
-    @GetMapping("/list")
-    public String showListOfGoods(Model model, @AuthenticationPrincipal UserDetails userDetails) {
-
-        List<GoodsDto> goodsDtoList = goodsService.findAllGoods();
-
-
-        model.addAttribute("goods", goodsDtoList);
-
-        return "list";
-    }
-
-    @PostMapping("/list/save")
-    public String registration(@Valid @ModelAttribute("goods") GoodsDto goodsDto,
-                               @AuthenticationPrincipal UserDetails userDetails,
-                               BindingResult result,
-                               Model model) {
-
-        goodsService.saveGoods(goodsDto, userDetails.getUsername());
-
-        return "redirect:/seller/my-goods";
-    }
+//    @GetMapping("/list")
+//    public String showListOfGoods(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+//
+//        List<GoodsDto> goodsDtoList = goodsService.findAllGoods();
+//
+//
+//        model.addAttribute("goods", goodsDtoList);
+//
+//        return "list";
+//    }
+//
+//    @PostMapping("/list/save")
+//    public String registration(@Valid @ModelAttribute("goods") GoodsDto goodsDto,
+//                               @AuthenticationPrincipal UserDetails userDetails,
+//                               BindingResult result,
+//                               Model model) {
+//
+//        goodsService.saveGoods(goodsDto, userDetails.getUsername());
+//
+//        return "redirect:/seller/my-goods";
+//    }
 
 
 }

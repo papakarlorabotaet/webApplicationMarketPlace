@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Аукционы</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="/">MarketPlace</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link" href="/list">Каталог</a></li>
+                <li class="nav-item"><a class="nav-link active" href="/auctions">Аукционы</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container">
+    <h2 class="mb-4">Активные торги</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="col" th:each="auction : ${auctions}">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title" th:text="${auction.goods.name}">Товар</h5>
+                    <p class="text-muted">Начальная цена: <span th:text="${auction.startingPrice}"></span> ₽</p>
+
+                    <h4 class="text-primary">Текущая ставка: <span th:id="'price-' + ${auction.id}" th:text="${auction.currentHighestBid}"></span> ₽</h4>
+                    <p class="small text-muted" th:id="'bidder-' + ${auction.id}">Ждем ставок...</p>
+
+                    <div class="input-group">
+                        <input type="number" th:id="'bid-input-' + ${auction.id}" class="form-control" placeholder="Ваша ставка">
+                        <button class="btn btn-success" type="button" th:onclick="'sendBid(' + ${auction.id} + ')'">Ставка</button>
+                    </div>
+                </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+<script th:inline="javascript">
+    var stompClient = null;
+
+    function connect() {
+        var socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected to Auction WS: ' + frame);
+
+            // Подписываемся на обновления всех аукционов, отображенных на странице
+            /*[[${auctions}]]*/.forEach(function(auction) {
+                stompClient.subscribe('/topic/auction/' + auction.id, function (update) {
+                    var data = JSON.parse(update.body);
+                    updateAuctionUI(data);
+                });
+            });
+        });
+    }
+
+    function sendBid(auctionId) {
+        var input = document.getElementById('bid-input-' + auctionId);
+        var amount = parseInt(input.value);
+
+        if (stompClient && amount) {
+            stompClient.send("/app/auction.bid/" + auctionId, {}, JSON.stringify(amount));
+            input.value = '';
+        }
+    }
+
+    function updateAuctionUI(data) {
+        // Находим элементы в карточке конкретного аукциона по ID
+        var priceElement = document.getElementById('price-' + data.auctionId);
+        var bidderElement = document.getElementById('bidder-' + data.auctionId);
+
+        if (priceElement) {
+            priceElement.innerText = data.newPrice;
+            // Можно добавить простую анимацию вспышки для наглядности
+            priceElement.style.color = 'red';
+            setTimeout(() => { priceElement.style.color = '#0d6efd'; }, 1000);
+        }
+        if (bidderElement) {
+            bidderElement.innerText = 'Последняя ставка: ' + data.bidderName;
+        }
+    }
+
+    connect();
+</script>
+</body>
+</html>
