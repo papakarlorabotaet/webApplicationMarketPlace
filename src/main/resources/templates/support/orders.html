@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Панель модератора</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Товары на проверке</h2>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Название</th>
+            <th>Цена</th>
+            <th>Действие</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${pendingGoods}">
+            <td th:text="${item.name}"></td>
+            <td th:text="${item.price}"></td>
+            <td>
+                <form th:action="@{/support/approve/{id}(id=${item.id})}" method="post" style="display:inline;">
+                    <button class="btn btn-success btn-sm">Одобрить</button>
+                </form>
+                <form th:action="@{/support/reject/{id}(id=${item.id})}" method="post" style="display:inline;">
+                    <button class="btn btn-danger btn-sm">Отклонить</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

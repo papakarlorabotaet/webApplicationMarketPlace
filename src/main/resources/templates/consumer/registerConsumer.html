@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация покупателя</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center" style="height: 100vh;">
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-dark text-white text-center py-3">
+                    <h3 class="fw-light my-2">Регистрация покупателя</h3>
+                </div>
+                <div class="card-body p-5">
+
+                    <!-- Блок успешной регистрации (после редиректа) -->
+                    <div th:if="${param.success}" class="alert alert-success text-center">
+                        Регистрация прошла успешно! <a th:href="@{/login}" class="alert-link">Войти</a>
+                    </div>
+
+
+                    <form th:action="@{/register/save}" method="post" th:object="${user}">
+
+                        <input type="hidden" name="role" value="ROLE_CONSUMER"/>
+
+
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="name" th:field="*{name}" placeholder="Имя">
+                            <label for="name">Имя</label>
+                            <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}"
+                               class="text-danger small mt-1"></p>
+                        </div>
+
+
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="surname" th:field="*{surname}"
+                                   placeholder="Фамилия">
+                            <label for="surname">Фамилия</label>
+                            <p th:if="${#fields.hasErrors('surname')}" th:errors="*{surname}"
+                               class="text-danger small mt-1"></p>
+                        </div>
+
+
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="email" th:field="*{email}"
+                                   placeholder="name@example.com">
+                            <label for="email">Email адрес</label>
+                            <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}"
+                               class="text-danger small mt-1"></p>
+                        </div>
+
+
+                        <div class="form-floating mb-4">
+                            <input type="password" class="form-control" id="password" th:field="*{password}"
+                                   placeholder="Пароль">
+                            <label for="password">Пароль</label>
+                            <p th:if="${#fields.hasErrors('password')}" th:errors="*{password}"
+                               class="text-danger small mt-1"></p>
+                        </div>
+                        <div class="form-floating mb-4">
+                            <input type="text" class="form-control" id="city" th:field="*{city}" placeholder="Ваш город">
+                            <label for="city">Город</label>
+                            <p th:if="${#fields.hasErrors('city')}" th:errors="*{city}" class="text-danger small mt-1"></p>
+                        </div>
+
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Зарегистрироваться</button>
+                        </div>
+                    </form> <!-- Закрывающий тег формы -->
+
+                </div>
+                <div class="card-footer text-center py-3 bg-white">
+                    <div class="small">
+                        <a th:href="@{/login}">Уже есть аккаунт? Войти</a><br>
+                        <a class="text-muted" th:href="@{/register/seller}">Стать продавцом</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

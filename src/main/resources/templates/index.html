@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Маркетплейс - Главная</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .card-img-top {
+            height: 200px;
+            object-fit: cover;
+            background-color: #f8f9fa;
+        }
+
+        .navbar-text .badge {
+            font-size: 0.75rem;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-light">
+
+<!-- Навигация, унифицированная с профилем -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}">MarketPlace</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/list}">Каталог</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/shops}">Магазины</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
+                    <a class="nav-link" th:href="@{/consumer/orders}">Заказы</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('SELLER')">
+                    <a class="nav-link" th:href="@{/seller/orders}">Заказы</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('SUPPORT')">
+                    <a class="nav-link" th:href="@{/support/orders}">Заказы</a>
+                </li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" th:href="@{/messages}">
+                        Сообщения
+                        <span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Корзина (видна всем) -->
+            <span class="navbar-text me-3">
+                Корзина (<span th:text="${cartItemsCount}">0</span>)
+            </span>
+
+            <!-- Блок авторизации -->
+            <ul class="navbar-nav">
+                <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <a class="nav-link" th:href="@{/login}">Войти</a>
+                </li>
+                <li class="nav-item" sec:authorize="!isAuthenticated()">
+                    <a class="nav-link btn btn-outline-light ms-2" th:href="@{/register/consumer}">Регистрация</a>
+                </li>
+
+
+                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
+                    <a class="nav-link" th:href="@{/consumer/profileConsumer}">Личный кабинет</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('SELLER')">
+                    <a class="nav-link" th:href="@{/seller/profileSeller}">Личный кабинет</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('SUPPORT')">
+                    <a class="nav-link" th:href="@{/support/profileSupport}">Личный кабинет</a>
+                </li>
+
+
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link text-danger" th:href="@{/logout}">Выход</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Основной контент -->
+<div class="container">
+    <h2 class="mb-4">Популярные товары</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="col" th:each="item : ${goods}">
+            <div class="card h-100 shadow-sm">
+                <img src="https://via.placeholder.com/300x200?text=Товар" class="card-img-top" alt="Фото товара">
+                <div class="card-body">
+                    <h5 class="card-title" th:text="${item.name}">Название товара</h5>
+                    <p class="card-text text-muted" th:text="${item.description}">Краткое описание товара...</p>
+                    <h4 class="text-primary" th:text="${item.price} + ' ₽'">1000 ₽</h4>
+                </div>
+                <div class="card-footer bg-white border-top-0 d-grid">
+                    <button class="btn btn-success">В корзину</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
