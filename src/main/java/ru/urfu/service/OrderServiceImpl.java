@@ -4,11 +4,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.urfu.entity.Goods;
 import ru.urfu.entity.Order;
+import ru.urfu.entity.OrderItem;
 import ru.urfu.entity.User;
 import ru.urfu.repository.GoodsRepository;
 import ru.urfu.repository.OrderRepository;
 import ru.urfu.repository.UserRepository;
 
+import javax.transaction.Transactional;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
@@ -35,10 +37,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<Order> findOrdersBySeller(User seller) {
         // Используем метод репозитория, который ищет заказы по товарам продавца
-        return orderRepository.findByGoods_User(seller);
+        return orderRepository.findByGoodsUser(seller);
     }
 
     @Override
+    @Transactional
     public void importOrders(MultipartFile file, String sellerEmail) {
         // Получаем продавца по email
         User seller = userRepository.findByEmail(sellerEmail);
@@ -46,9 +49,6 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Продавец не найден");
         }
 
-        // Пример парсинга CSV-файла (первая строка — заголовок)
-        // Формат: goodsName, quantity, totalPrice, orderDate, status
-        // Для простоты используем чтение строк
         List<Order> orders = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
@@ -75,17 +75,27 @@ public class OrderServiceImpl implements OrderService {
                     continue;
                 }
 
+                // 3. Создаём заказ
                 Order order = new Order();
-                order.setGoods(goods);
-                order.setQuantity(quantity);
-                order.setTotalPrice(totalPrice);
                 order.setOrderDate(orderDate);
                 order.setStatus(status);
-                // Покупатель может быть неизвестен, оставляем null
+                order.setBuyer(null); // покупатель неизвестен при импорте
+                order.setTotalPrice(totalPrice);
+                order.setQuantity(quantity); // если нужно дублировать общее количество
+
+                // 4. Создаём позицию заказа
+                OrderItem item = new OrderItem();
+                item.setGoods(goods);
+                item.setQuantity(quantity);
+                item.setOrder(order); // двусторонняя связь
+
+                // 5. Привязываем позицию к заказу
+                order.setItems(List.of(item));
 
                 orders.add(order);
             }
 
+            // Сохраняем все заказы (каскадно сохранятся и позиции)
             orderRepository.saveAll(orders);
 
         } catch (Exception e) {

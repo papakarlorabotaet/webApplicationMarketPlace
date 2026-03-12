@@ -5,13 +5,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -19,13 +14,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import ru.urfu.entity.GoodsStatus;
-import ru.urfu.entity.User;
-import ru.urfu.entity.Goods;
-import ru.urfu.entity.Order;
+import ru.urfu.entity.*;
 import ru.urfu.repository.GoodsRepository;
 import ru.urfu.repository.OrderRepository;
 import ru.urfu.repository.UserRepository;
@@ -207,16 +199,60 @@ public class SellerController {
         goodsRepository.save(goods);
 
         Order order = new Order();
-        order.setGoods(goods);
         order.setQuantity(quantity);
         order.setBuyer(buyer);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus("CREATED");
-        order.calculateAndSetTotalPrice();
+        order.setTotalPrice(goods.getPrice());
 
         orderRepository.save(order);
 
         return "redirect:/seller/profile";
 
     }
+
+    @GetMapping("/api/dashboard")
+    @ResponseBody
+    public Map<String, Object> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) {
+        ru.urfu.entity.User seller = userRepository.findByEmail(userDetails.getUsername());
+        List<Order> orders = orderService.findOrdersBySeller(seller);
+
+        // Списки для осей графика
+        List<String> labels = new ArrayList<>();
+        List<java.math.BigDecimal> revenues = new ArrayList<>();
+
+        // Группируем успешные заказы: Название товара -> Сумма выручки
+        Map<String, BigDecimal> revenuePerGoods = orders.stream()
+                .filter(o -> "Оплачен".equals(o.getStatus()) || "Доставлен".equals(o.getStatus()))
+                .flatMap(o -> o.getItems().stream())   // преобразуем заказ в поток его позиций
+                .collect(Collectors.groupingBy(
+                        item -> item.getGoods().getName(),
+                        Collectors.reducing(
+                                BigDecimal.ZERO,
+                                OrderItem::getTotalPrice,  // используем метод из п.2
+                                BigDecimal::add
+                        )
+                ));
+
+        // Заполняем списки для JSON
+        revenuePerGoods.forEach((name, rev) -> {
+            labels.add(name);
+            revenues.add(rev);
+        });
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("labels", labels);       // Названия товаров
+        data.put("revenues", revenues);   // Выручка
+        return data;
+    }
+
+    // Метод для отображения самой страницы с графиками
+    @GetMapping("/dashboard")
+    public String showDashboard() {
+        // Эта строка говорит Spring Boot: "Верни файл src/main/resources/templates/seller/dashboard.html"
+        return "seller/dashboard";
+    }
+
+
+
 }

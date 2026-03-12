@@ -8,15 +8,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import ru.urfu.entity.User;
 import ru.urfu.repository.UserRepository;
+import ru.urfu.service.OrderService;
 
 @Controller
 @RequestMapping("/consumer")
 public class ConsumerController {
 
     private final UserRepository userRepository;
+    private final OrderService orderService;
 
-    public ConsumerController(UserRepository userRepository) {
+    public ConsumerController(UserRepository userRepository, OrderService orderService) {
         this.userRepository = userRepository;
+        this.orderService = orderService;
     }
 
     @GetMapping("/profile")
@@ -26,4 +29,13 @@ public class ConsumerController {
         model.addAttribute("cartItemsCount", 0); // позже
         return "consumer/profileConsumer";
     }
+
+    @GetMapping("/orders")
+    public String orders(@AuthenticationPrincipal UserDetails userDetails, Model model) {
+        User user = userRepository.findByEmail(userDetails.getUsername());
+        model.addAttribute("orders", orderService.findOrdersBySeller(user));
+        return "consumer/orders"; // Возвращаем наш новый шаблон
+    }
+
+
 }

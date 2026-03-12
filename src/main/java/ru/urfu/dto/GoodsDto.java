@@ -1,9 +1,6 @@
 package ru.urfu.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.Id;
 import javax.validation.constraints.Min;
@@ -14,6 +11,7 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class GoodsDto {
     @Id
     private Long id;

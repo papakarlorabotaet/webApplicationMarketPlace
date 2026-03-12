@@ -2,6 +2,7 @@ package ru.urfu.entity;
 
 import lombok.Data;
 import javax.persistence.*;
+import java.math.BigDecimal;
 
 @Entity
 @Data
@@ -20,4 +21,6 @@ public class CartItem {
     private Goods goods;
 
     private int quantity;
+
+    private BigDecimal totalPrice;
 }

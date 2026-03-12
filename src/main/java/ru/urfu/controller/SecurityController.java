@@ -27,9 +27,14 @@ public class SecurityController {
         this.userService = userService;
     }
 
+    @GetMapping("/")
+    public String rootRedirectList() {
+        return "redirect:/list";
+    }
+
     @GetMapping("/index")
-    public String home() {
-        return "index";
+    public String indexRedirectList() {
+        return "redirect:/list";
     }
 
     @GetMapping("/permissionDenied")

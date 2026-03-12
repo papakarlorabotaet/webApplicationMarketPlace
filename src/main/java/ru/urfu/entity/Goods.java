@@ -31,6 +31,10 @@ public class Goods {
     @JoinColumn(name = "user_id") // Теперь ссылаемся на общего пользователя
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     @Column(name = "name")
     private String name;
 
