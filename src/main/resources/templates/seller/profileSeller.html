@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Профиль продавца</title>
+    <title>Профиль ):) Маркетплейс</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        .card-img-top { height: 200px; object-fit: cover; }
+        .badge-status { position: absolute; top: 10px; right: 10px; }
+
+        /* Добавьте эти строки ниже */
         .profile-name {
             font-size: 2rem;
             font-weight: 700;
@@ -12,16 +16,16 @@
         }
 
         .nav-links-horizontal {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem 1rem;
-            list-style: none;
+            display: flex;         /* Включаем гибкую верстку (в строку) */
+            flex-wrap: wrap;       /* Разрешаем перенос, если места мало */
+            gap: 0.5rem 1rem;      /* Отступы между элементами */
+            list-style: none;      /* Убираем точки (bullets) */
             padding: 0;
             margin: 1rem 0 0;
         }
 
         .nav-links-horizontal .separator {
-            color: #6c757d;
+            color: #6c757d;        /* Серый цвет для разделителя | */
         }
 
         .balance-number {
@@ -29,40 +33,67 @@
             font-weight: 500;
             line-height: 1;
         }
-
-        .card-header {
-            font-weight: bold;
-        }
     </style>
 </head>
 <body class="bg-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand" href="/">MarketPlace</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}">MARKETPLACE</a>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/list">Каталог</a></li>
-                <li class="nav-item"><a class="nav-link" href="/shops">Магазины</a></li>
-                <li class="nav-item"><a class="nav-link active" href="/seller/profile">Панель продавца</a></li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/messages">
-                        Сообщения
-                        <span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
-                    </a>
-                </li>
-            </ul>
             <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
+
+                <li class="nav-item" sec:authorize="isAnonymous()">
+                    <a class="nav-link btn btn-outline-light btn-sm ms-lg-2" th:href="@{/login}">ВОЙТИ</a>
+                </li>
+
                 <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/logout}">Выйти</a>
+                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА <span class="badge bg-primary" th:text="${cartItemsCount}">0</span></a>
+                </li>
+
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#" id="profileDrop" data-bs-toggle="dropdown">
+                        ЛИЧНЫЙ КАБИНЕТ
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <div sec:authorize="hasRole('CONSUMER')">
+                            <li><a class="dropdown-item" th:href="@{/consumer/profile}">Мой профиль</a></li>
+                            <li><a class="dropdown-item" th:href="@{/consumer/orders}">Мои заказы</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SELLER')">
+                            <li><a class="dropdown-item" th:href="@{/seller/profile}">Панель продавца</a></li>
+                            <li><a class="dropdown-item" th:href="@{/seller/my-goods}">Мои товары</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SUPPORT')">
+                            <li><a class="dropdown-item" th:href="@{/support/profile}">Админ-панель</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/orders}">Модерация товаров</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/questions}">Модерация вопросов</a></li>
+                        </div>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/settings}">
+                                ⚙ Настройки профиля
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
+                    </ul>
                 </li>
             </ul>
         </div>
     </div>
 </nav>
+
+
+
+
+
+
+
+
+
 
 <main class="container mt-4">
     <div class="row g-4">
@@ -70,43 +101,29 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
-                        <img th:if="${goods.imagePath != null}"
-                             th:src="@{'/uploads/' + ${good.imagePath}}"
-                             class="card-img-top"
-                             alt="Фото товара">
-
-                        <img th:if="${good.imagePath == null}"
-                             src="https://via.placeholder.com/300x200?text=Нет+фото"
-                             class="card-img-top"
-                             alt="Заглушка">
+                        <img src="https://via.placeholder.com/80x80?text=Seller" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;" alt="Avatar">
                         <div>
                             <div class="profile-name" th:text="${user.name} + ' ' + ${user.surname}">Иван Иванов</div>
                             <div class="text-muted">
-                                Регистрация: <span th:text="${#temporals.format(user.registrationDate, 'dd.MM.yyyy')}">17.05.2025</span> |
                                 Город: <span th:text="${user.city}">Москва</span> 🏙️
                             </div>
                         </div>
                     </div>
-
                     <hr>
-
                     <ul class="nav-links-horizontal">
-                        <li><a href="/seller/my-goods" class="text-decoration-none fw-bold">Мои товары</a></li>
+                        <li><a href="/seller/my-goods" class="text-decoration-none fw-bold">📦 Управление товарами</a></li>
+                        <li class="separator">|</li>
+                        <li><a href="#" class="text-decoration-none">Отзывы</a></li>
                         <li class="separator">|</li>
                         <li><a href="#" class="text-decoration-none">Безопасность</a></li>
-                        <li class="separator">|</li>
-                        <li><a href="#" class="text-decoration-none">Отзывы о магазине</a></li>
-                        <li class="separator">|</li>
-                        <li><a href="#" class="text-decoration-none">Логи</a></li>
                     </ul>
                 </div>
             </div>
 
             <div class="card shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Заказы моих клиентов</h5>
-                    <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addOrderModal">+ Добавить заказ</button>
-                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">Импорт заказов</button>
+                    <h5 class="mb-0">Последние заказы</h5>
+                    <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addOrderModal">+ Создать заказ</button>
                 </div>
                 <div class="card-body">
                     <div th:if="${not #lists.isEmpty(orders)}" class="table-responsive">
@@ -115,7 +132,6 @@
                             <tr>
                                 <th>Дата</th>
                                 <th>Товар</th>
-                                <th>Кол-во</th>
                                 <th>Сумма</th>
                                 <th>Статус</th>
                             </tr>
@@ -123,19 +139,18 @@
                             <tbody>
                             <tr th:each="order : ${orders}">
                                 <td th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy HH:mm')}">01.01.2026</td>
-                                <td th:text="${order.goods.name}">Название товара</td>
-                                <td th:text="${order.quantity}">1</td>
-                                <td th:text="${order.totalPrice} + ' ₽'">100 ₽</td>
                                 <td>
-                                    <span class="badge bg-success" th:text="${order.status}">Оплачен</span>
+                                    <div th:each="orderItem : ${order.items}">
+                                        <span class="badge bg-light text-dark border mb-1" th:text="${orderItem.goods.name} + ' (x' + ${orderItem.quantity} + ')'"></span>
+                                    </div>
                                 </td>
+                                <td th:text="${order.totalPrice} + ' ₽'">100 ₽</td>
+                                <td><span class="badge bg-success" th:text="${order.status}">Оплачен</span></td>
                             </tr>
                             </tbody>
                         </table>
                     </div>
-                    <div th:if="${#lists.isEmpty(orders)}" class="alert alert-info mb-0">
-                        У вас пока нет активных заказов.
-                    </div>
+                    <div th:if="${#lists.isEmpty(orders)}" class="alert alert-info mb-0">Активных заказов нет.</div>
                 </div>
             </div>
         </div>
@@ -148,107 +163,15 @@
                     <div class="text-muted mt-2">доступно к выводу (₽)</div>
                 </div>
             </div>
-
             <div class="card shadow-sm">
-                <div class="card-header bg-white fw-bold">Настройки доступа</div>
+                <div class="card-header bg-white fw-bold">Настройки</div>
                 <div class="card-body">
-                    <p class="text-muted small">Регулярная смена пароля повышает безопасность вашего магазина.</p>
                     <a href="/change-password" class="btn btn-outline-warning w-100">Сменить пароль</a>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row mt-5">
-        <h4 class="mb-4">Мои товары на витрине</h4>
-        <div th:if="${not #lists.isEmpty(myGoods)}" class="row row-cols-1 row-cols-md-3 g-4">
-            <div class="col" th:each="item : ${myGoods}">
-                <div class="card h-100 shadow-sm">
-                    <img th:src="${item.imagePath != null ? '/uploads/' + item.imagePath : 'https://via.placeholder.com/300x200'}" alt="Товар" />
-
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title mb-0" th:text="${item.name}">Название товара</h5>
-                            <span class="badge"
-                                  th:classappend="${item.getModerationStatus() == 'APPROVED' ? 'bg-success' : (item.getModerationStatus() == 'PENDING' ? 'bg-warning' : 'bg-danger')}"
-                                  th:text="${item.getModerationStatus()}">APPROVED</span>
-                        </div>
-
-                        <h4 class="text-primary mb-3"><span th:text="${item.price}">0</span> ₽</h4>
-                        <p class="text-muted small">Остаток: <span th:text="${item.quantity}">0</span> шт.</p>
-
-                        <div class="mt-auto d-grid gap-2">
-                            <a th:href="@{/seller/goods/edit/{id}(id=${item.id})}" class="btn btn-sm btn-outline-primary">✎ Редактировать (Фото, Описание)</a>
-                            <a th:href="@{/seller/goods/{id}/stats(id=${item.id})}" class="btn btn-sm btn-outline-secondary">📊 Статистика и Покупки</a>
-                            <a th:href="@{/seller/goods/{id}/feedback(id=${item.id})}" class="btn btn-sm btn-outline-info">💬 Отзывы и Вопросы</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div th:if="${#lists.isEmpty(myGoods)}" class="alert alert-secondary">
-            У вас пока нет добавленных товаров.
-        </div>
-    </div>
 </main>
-
-<div class="modal fade" id="importModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" action="/seller/import-orders" enctype="multipart/form-data">
-                <div class="modal-header">
-                    <h5 class="modal-title">Импорт заказов из файла</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Выберите файл (CSV или Excel)</label>
-                        <input type="file" name="file" class="form-control" accept=".csv,.xlsx" required>
-                    </div>
-                    <p class="text-muted small">Убедитесь, что формат файла соответствует шаблону магазина.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Загрузить данные</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="addOrderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form th:action="@{/seller/add-order}" method="post">
-                <div class="modal-header">
-                    <h5 class="modal-title">Новый заказ вручную</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Товар</label>
-                        <select name="goodsId" class="form-select" required>
-                            <option th:each="item : ${myGoods}"
-                                    th:value="${item.id}"
-                                    th:text="${item.name + ' (цена: ' + item.price + ')'}">Товар</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Количество</label>
-                        <input type="number" name="quantity" class="form-control" min="1" value="1" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email покупателя</label>
-                        <input type="email" name="buyerEmail" class="form-control" placeholder="example@mail.ru" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-success">Создать заказ</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

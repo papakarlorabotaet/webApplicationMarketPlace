@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Дашборд продавца - Аналитика</title>
+    <!-- Подключение Bootstrap для красоты (если он уже есть в проекте, можно пропустить) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Подключение Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="container mt-5">
+    <h2 class="mb-4">Аналитика продаж продавца</h2>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center">Выручка по товарам (₽)</h5>
+                    <!-- Место, где будет нарисован график -->
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="/seller/my-goods" class="btn btn-primary">Вернуться к товарам</a>
+    </div>
+</div>
+
+<script>
+    // Запрашиваем данные у нашего контроллера
+    fetch('/seller/api/dashboard') // Если SellerController имеет маппинг @RequestMapping("/seller"), иначе просто /api/dashboard
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+
+            // Инициализация графика Chart.js
+            new Chart(ctx, {
+                type: 'bar', // Тип графика: столбчатая диаграмма
+                data: {
+                    labels: data.labels, // Массив названий товаров (Ось X)
+                    datasets: [{
+                        label: 'Суммарная выручка',
+                        data: data.revenues, // Массив выручки (Ось Y)
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)', // Цвет колонок
+                        borderColor: 'rgba(54, 162, 235, 1)',       // Цвет рамки колонок
+                        borderWidth: 1,
+                        borderRadius: 5 // Закругленные края колонок
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Рубли (₽)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Наименование товара'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Ошибка загрузки данных для дашборда:', error));
+</script>
+
+</body>
+</html>

@@ -25,9 +25,13 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(name = "avatar_path")
+    private String avatarPath;
+
     private String password;
     private String name;
     private String surname;
+
 
     @Column(name = "city")
     private String city;

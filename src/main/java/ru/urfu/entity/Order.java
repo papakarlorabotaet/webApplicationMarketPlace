@@ -5,6 +5,7 @@ import lombok.Data;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -20,9 +21,9 @@ public class Order {
     @JoinColumn(name = "buyer_id")
     private User buyer;           // покупатель (может быть null, если заказ импортирован)
 
-    @ManyToOne
-    @JoinColumn(name = "goods_id")
-    private Goods goods;          // товар
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    private List<OrderItem> items;
+
 
     private int quantity;
 
@@ -31,11 +32,11 @@ public class Order {
     private String status;// например, "Оплачен", "Отправлен"
 
 
-    public void calculateAndSetTotalPrice() {
-        if (this.goods != null && this.goods.getPrice() != null && this.quantity != 0) {
-            this.totalPrice = this.goods.getPrice().multiply(new BigDecimal(this.quantity));
-        } else {
-            this.totalPrice = null; // или обработка ошибки
-        }
+
+    public List<OrderItem> getItems() {
+        return items;
     }
+
+
+
 }

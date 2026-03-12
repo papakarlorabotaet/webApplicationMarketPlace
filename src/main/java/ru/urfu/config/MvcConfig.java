@@ -20,7 +20,11 @@ public class MvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // Преобразуем относительный путь в абсолютный file: путь
+        String absolutePath = Paths.get(uploadPath).toAbsolutePath().normalize().toString();
+        // Важно: путь должен заканчиваться слешем
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + Paths.get(uploadPath).toAbsolutePath() + "/");
+                .addResourceLocations("file:" + absolutePath + "/")
+                .setCachePeriod(0); // отключаем кэширование для отладки
     }
 }

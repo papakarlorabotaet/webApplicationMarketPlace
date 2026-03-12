@@ -84,11 +84,29 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    public List<GoodsDto> findAllApprovedGoods() {
-        return goodsRepository.findByModerationStatus(GoodsStatus.APPROVED).stream()
+    public List<GoodsDto> findApprovedGoodsByCategoryId(Long categoryId) {
+        return goodsRepository.findByCategoryId(categoryId).stream()
+                .filter(goods -> goods.getModerationStatus() == GoodsStatus.APPROVED)
+                .map(this::goodsToGoodsDto)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+//    @Override
+//    public List<GoodsDto> findAllApprovedGoods() {
+//        return goodsRepository.findByModerationStatus(GoodsStatus.APPROVED).stream()
+//                .map(this::goodsToGoodsDto)
+//                .collect(Collectors.toList());
+//    }
+
+    @Override
+    public List<GoodsDto> findFilteredGoods(Long categoryId, String search, BigDecimal minPrice, BigDecimal maxPrice, String sellerEmail) {
+        return goodsRepository.findFilteredGoods(categoryId, search, minPrice, maxPrice, GoodsStatus.APPROVED, sellerEmail)
+                .stream()
                 .map(this::goodsToGoodsDto)
                 .collect(Collectors.toList());
     }
+
+
 
     @Override
     public List<GoodsDto> findAllPendingGoods() {
@@ -126,6 +144,7 @@ public class GoodsServiceImpl implements GoodsService {
         GoodsDto dto = new GoodsDto();
         dto.setSellerName(goods.getUser().getName());
         dto.setSellerEmail(goods.getUser().getEmail());
+        dto.setImagePath(goods.getImagePath());
         dto.setId(goods.getId());
         dto.setName(goods.getName());
         dto.setDescription(goods.getDescription());

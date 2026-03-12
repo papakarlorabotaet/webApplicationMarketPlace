@@ -43,7 +43,7 @@ public class WebSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/list", "/about", "/register", "/index", "/login","/ws/**").permitAll()
+                .antMatchers("/list", "/about", "/register", "/index", "/login","/ws/**","/uploads/").permitAll()
                 .antMatchers("/auctions/**", "/messages/**").authenticated()
                 .antMatchers("/support/**").hasRole("SUPPORT")
                 .antMatchers("/seller/**").hasRole("SELLER")

@@ -44,6 +44,11 @@
                             <li><a class="dropdown-item" th:href="@{/support/orders}">Модерация товаров</a></li>
                             <li><a class="dropdown-item" th:href="@{/support/questions}">Модерация вопросов</a></li>
                         </div>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/settings}">
+                                ⚙ Настройки профиля
+                            </a>
+                        </li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
                     </ul>
@@ -52,6 +57,56 @@
         </div>
     </div>
 </nav>
+
+
+
+
+
+
+
+
+
+<!-- Форма фильтрации по категориям -->
+<!-- Форма фильтрации -->
+<div class="container mb-4 mt-3">
+    <form action="/list" method="get" class="row g-3 align-items-end">
+
+        <!-- Категория -->
+        <div class="col-md-3">
+            <label for="category" class="form-label fw-bold">Категория:</label>
+            <select name="categoryId" id="category" class="form-select">
+                <option value="">Все категории</option>
+                <option th:each="cat : ${categories}"
+                        th:value="${cat.id}"
+                        th:text="${cat.name}"
+                        th:selected="${cat.id == selectedCategoryId}">
+                </option>
+            </select>
+        </div>
+
+        <!-- Поиск -->
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Поиск:</label>
+            <input type="text" name="search" th:value="${search}" class="form-control" placeholder="Название...">
+        </div>
+
+        <!-- Галочка для продавца (Видна только SELLER) -->
+        <div class="col-md-3" sec:authorize="hasRole('SELLER')">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="onlyMine" id="onlyMine" th:checked="${onlyMine}">
+                <label class="form-check-label fw-bold" for="onlyMine">
+                    Только мои товары
+                </label>
+            </div>
+        </div>
+
+        <!-- Кнопка -->
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Применить</button>
+        </div>
+    </form>
+</div>
+
 
 <div class="container py-5">
     <div class="row mb-4 align-items-center">
@@ -91,18 +146,41 @@
                     <div class="d-grid gap-2">
                         <a sec:authorize="isAnonymous()" th:href="@{/login}" class="btn btn-outline-primary">Войти для покупки</a>
 
-                        <form sec:authorize="hasRole('CONSUMER')" th:action="@{/cart/add}" method="post">
-                            <input type="hidden" name="goodsId" th:value="${good.id}">
-                            <button type="submit" class="btn btn-primary w-100" th:disabled="${good.quantity <= 0}">
+                        <form sec:authorize="hasRole('CONSUMER')"
+                              th:action="@{/cart/add}"
+                              method="post"
+                              class="d-flex">
+
+                            <input type="hidden"
+                                   name="goodsId"
+                                   th:value="${good.id}">
+
+                            <input type="number"
+                                   name="quantity"
+                                   value="1"
+                                   min="1"
+                                   class="form-control form-control-sm me-2"
+                                   style="width:80px">
+
+                            <button class="btn btn-primary btn-sm"
+                                    th:disabled="${good.quantity <= 0}">
+
                                 <span th:text="${good.quantity > 0 ? 'В корзину' : 'Нет в наличии'}"></span>
+
+                            </button>
+
+                        </form>
+                            <input type="hidden" name="goodsId" th:value="${good.getId()}">
+                            <button type="submit" class="btn btn-primary w-100" th:disabled="${good.getQuantity() <= 0}">
+                                <span th:text="${good.getQuantity() > 0 ? 'В корзину' : 'Нет в наличии'}"></span>
                             </button>
                         </form>
 
                         <div sec:authorize="hasRole('SELLER')">
-                            <a th:if="${good.user.email == #authentication.name}"
+                            <a th:if="${good.sellerEmail == #authentication.name}"
                                th:href="@{/seller/goods/edit/{id}(id=${good.id})}"
                                class="btn btn-warning btn-sm w-100">Редактировать мой товар</a>
-                            <span th:unless="${good.user.email == #authentication.name}"
+                            <span th:unless="${good.sellerEmail == #authentication.name}"
                                   class="text-muted small d-block text-center">Просмотр (режим продавца)</span>
                         </div>
 

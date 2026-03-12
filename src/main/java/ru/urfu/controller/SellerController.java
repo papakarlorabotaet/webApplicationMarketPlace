@@ -5,13 +5,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -19,16 +14,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import ru.urfu.entity.GoodsStatus;
-import ru.urfu.entity.User;
-import ru.urfu.entity.Goods;
-import ru.urfu.entity.Order;
+import ru.urfu.entity.*;
 import ru.urfu.repository.GoodsRepository;
 import ru.urfu.repository.OrderRepository;
 import ru.urfu.repository.UserRepository;
+import ru.urfu.service.CartService;
 import ru.urfu.service.GoodsService;
 import ru.urfu.service.OrderService;
 
@@ -42,26 +35,33 @@ public class SellerController {
     private final GoodsService goodsService;
     private final GoodsRepository goodsRepository;
     private final OrderRepository orderRepository;
+    private final CartService cartService;
 
     public SellerController(UserRepository userRepository,
                             OrderService orderService,
-                            GoodsService goodsService, GoodsRepository goodsRepository, OrderRepository orderRepository) {
+                            GoodsService goodsService, GoodsRepository goodsRepository, OrderRepository orderRepository, CartService cartService) {
         this.userRepository = userRepository;
         this.orderService = orderService;
         this.goodsService = goodsService;
         this.goodsRepository = goodsRepository;
         this.orderRepository = orderRepository;
+        this.cartService = cartService;
     }
 
     @GetMapping("/profile")
     public String profile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User seller = userRepository.findByEmail(userDetails.getUsername());
+
+        int cartCount = 0;
+        if (userDetails != null) {
+            User user = userRepository.findByEmail(userDetails.getUsername());
+            cartCount = cartService.getCartByUser(user).getItems().size(); //циферка корзины
+        }
         model.addAttribute("user", seller);
-
-        // Добавляем заказы продавца в модель
         model.addAttribute("orders", orderService.findOrdersBySeller(seller));
-
         model.addAttribute("myGoods", goodsService.findGoodsByUserEmail(seller.getEmail()));
+        model.addAttribute("cartItemsCount", cartCount);
+        unreadMessagesCount
         return "seller/profileSeller";
     }
 
@@ -88,7 +88,7 @@ public class SellerController {
     @GetMapping("/my-goods")
     public String myGoods(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User seller = userRepository.findByEmail(userDetails.getUsername());
-        model.addAttribute("sellerGoods", goodsService.findGoodsByUserEmail(seller.getEmail()));
+        model.addAttribute("myGoods", goodsService.findGoodsByUserEmail(seller.getEmail()));
         model.addAttribute("user", seller);
         return "seller/myGoods"; // new template
     }
@@ -163,6 +163,12 @@ public class SellerController {
                                      @RequestParam BigDecimal price,
                                      @RequestParam("image") MultipartFile image,
                                      @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+        System.out.println("=== Добавление товара ===");
+        System.out.println("Имя: " + name);
+        System.out.println("Файл: " + image.getOriginalFilename());
+        System.out.println("Пустой? " + image.isEmpty());
+        System.out.println("Размер: " + image.getSize());
+
         User seller = userRepository.findByEmail(userDetails.getUsername());
         Goods goods = new Goods();
         goods.setName(name);
@@ -171,17 +177,33 @@ public class SellerController {
         goods.setUser(seller);
         goods.setModerationStatus(GoodsStatus.PENDING); // adjust as needed
         if (!image.isEmpty()) {
-            // Генерируем уникальное имя файла
-            String filename = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+            try {
+                String filename = UUID.randomUUID().toString() + "_" + image.getOriginalFilename();
+                System.out.println("Генерируем имя файла: " + filename);
+
+                Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+                System.out.println("Путь загрузки: " + uploadPath);
+
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                    System.out.println("Директория создана");
+                }
+
+                Path filePath = uploadPath.resolve(filename);
+                image.transferTo(filePath.toFile());
+                System.out.println("Файл сохранён: " + filePath);
+
+                goods.setImagePath(filename);
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Можно добавить сообщение об ошибке в модель и вернуть форму
             }
-            Path filePath = uploadPath.resolve(filename);
-            image.transferTo(filePath.toFile());
-            goods.setImagePath(filename); // сохраняем только имя файла (или относительный путь)
+        } else {
+            System.out.println("Файл не выбран, imagePath остаётся null");
         }
+
         goodsRepository.save(goods);
+        System.out.println("Товар сохранён с imagePath = " + goods.getImagePath());
         return "redirect:/seller/my-goods";
     }
 
@@ -207,16 +229,74 @@ public class SellerController {
         goodsRepository.save(goods);
 
         Order order = new Order();
-        order.setGoods(goods);
-        order.setQuantity(quantity);
+
         order.setBuyer(buyer);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus("CREATED");
-        order.calculateAndSetTotalPrice();
 
+
+        BigDecimal total = goods.getPrice().multiply(BigDecimal.valueOf(quantity));
+        order.setTotalPrice(total);
+
+        //Создаем позицию заказа (OrderItem) !!!
+        OrderItem item = new OrderItem();
+        item.setOrder(order);
+        item.setGoods(goods);
+        item.setQuantity(quantity);
+        item.setPrice(goods.getPrice());
+
+        // Добавляем позицию в список заказа
+        order.setItems(Collections.singletonList(item));
+
+        // Сохраняем (если у вас стоит CascadeType.ALL в Order, сохранится и OrderItem)
         orderRepository.save(order);
 
         return "redirect:/seller/profile";
 
     }
+
+    @GetMapping("/api/dashboard")
+    @ResponseBody
+    public Map<String, Object> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) {
+        ru.urfu.entity.User seller = userRepository.findByEmail(userDetails.getUsername());
+        List<Order> orders = orderService.findOrdersBySeller(seller);
+
+        // Списки для осей графика
+        List<String> labels = new ArrayList<>();
+        List<java.math.BigDecimal> revenues = new ArrayList<>();
+
+        // Группируем успешные заказы: Название товара -> Сумма выручки
+        Map<String, BigDecimal> revenuePerGoods = orders.stream()
+                .filter(o -> "Оплачен".equals(o.getStatus()) || "Доставлен".equals(o.getStatus()))
+                .flatMap(o -> o.getItems().stream())   // преобразуем заказ в поток его позиций
+                .collect(Collectors.groupingBy(
+                        item -> item.getGoods().getName(),
+                        Collectors.reducing(
+                                BigDecimal.ZERO,
+                                OrderItem::getTotalPrice,  // используем метод из п.2
+                                BigDecimal::add
+                        )
+                ));
+
+        // Заполняем списки для JSON
+        revenuePerGoods.forEach((name, rev) -> {
+            labels.add(name);
+            revenues.add(rev);
+        });
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("labels", labels);       // Названия товаров
+        data.put("revenues", revenues);   // Выручка
+        return data;
+    }
+
+    // Метод для отображения самой страницы с графиками
+    @GetMapping("/dashboard")
+    public String showDashboard() {
+        // Эта строка говорит Spring Boot: "Верни файл src/main/resources/templates/seller/dashboard.html"
+        return "seller/dashboard";
+    }
+
+
+
 }
