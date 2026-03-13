@@ -1,6 +1,7 @@
 package ru.urfu.dto;
 
 import lombok.*;
+import ru.urfu.entity.GoodsStatus;
 
 import javax.persistence.Id;
 import javax.validation.constraints.Min;
@@ -31,7 +32,9 @@ public class GoodsDto {
     @Min(value = 0, message = "Цена не может быть отрицательной")
     private BigDecimal price;
 
-    private String moderationStatus;
+    private GoodsStatus moderationStatus;
+    private Double averageRating;
+    private Long reviewCount;
 
     private String imagePath;
 

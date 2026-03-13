@@ -26,8 +26,7 @@ public class MessageController {
     @GetMapping
     public String myMessages(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User user = userRepository.findByEmail(userDetails.getUsername());
-        // Получаем все сообщения, где пользователь либо отправитель, либо получатель
-        model.addAttribute("messages", messageRepository.findAllByUser(user));
+        model.addAttribute("messages", messageRepository.findAllRecentDialogs(user.getId()));
         return "messages/list";
     }
 
@@ -45,6 +44,28 @@ public class MessageController {
         msg.setContent(content);
         messageRepository.save(msg);
 
-        return "redirect:/messages";
+        return "redirect:/messages/chat/" + receiverId;
     }
+
+    @GetMapping("/chat/{companionId}")
+    public String openChat(@PathVariable Long companionId,
+                           @AuthenticationPrincipal UserDetails userDetails,
+                           Model model) {
+        User currentUser = userRepository.findByEmail(userDetails.getUsername());
+        User companion = userRepository.findById(companionId).orElseThrow();
+
+        // 1. Помечаем входящие сообщения от этого собеседника как прочитанные
+        messageRepository.markAsRead(companion, currentUser);
+
+        // 2. Список всех диалогов (для левой панели)
+        model.addAttribute("messages", messageRepository.findAllRecentDialogs(currentUser.getId()));
+
+        // 3. История переписки именно с этим человеком (для правой панели)
+        model.addAttribute("chatHistory", messageRepository.findChatHistory(currentUser, companion));
+        model.addAttribute("companion", companion);
+
+        return "messages/list";
+    }
+
+
 }

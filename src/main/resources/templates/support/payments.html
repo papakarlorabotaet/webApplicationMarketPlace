@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Управление платежами</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}">MARKETPLACE</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" href="/messages">СООБЩЕНИЯ<span class="badge bg-secondary"
+                                                                        th:text="${unreadMessagesCount} ?: 0">0</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" sec:authorize="isAnonymous()">
+                    <a class="nav-link btn btn-outline-light btn-sm ms-lg-2" th:href="@{/login}">ВОЙТИ</a>
+                </li>
+
+                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
+                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА <span class="badge bg-primary"
+                                                                         th:text="${cartItemsCount}">0</span></a>
+                </li>
+
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#" id="profileDrop" data-bs-toggle="dropdown">
+                        ЛИЧНЫЙ КАБИНЕТ
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <div sec:authorize="hasRole('CONSUMER')">
+                            <li><a class="dropdown-item" th:href="@{/consumer/profile}">Мой профиль</a></li>
+                            <li><a class="dropdown-item" th:href="@{/consumer/orders}">Мои заказы</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SELLER')">
+                            <li><a class="dropdown-item" th:href="@{/seller/profile}">Панель продавца</a></li>
+                            <li><a class="dropdown-item" th:href="@{/seller/my-goods}">Мои товары</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SUPPORT')">
+                            <li><a class="dropdown-item" th:href="@{/support/profile}">Админ-панель</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/orders}">Модерация товаров</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/questions}">Модерация вопросов</a></li>
+                        </div>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/settings}">
+                                ⚙ Настройки профиля
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container mt-4">
+    <h2>Запросы на пополнение баланса</h2>
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>Пользователь</th>
+            <th>Email</th>
+            <th>Сумма</th>
+            <th>Дата</th>
+            <th>Действия</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="tx : ${pendingDeposits}">
+            <td th:text="${tx.user.getName()}"></td>
+            <td th:text="${tx.user.getEmail()}"></td>
+            <td th:text="${tx.getAmount()} + ' ₽'"></td>
+            <td th:text="${#temporals.format(tx.createdAt, 'dd.MM.yyyy HH:mm')}"></td>
+            <td>
+                <div th:if="${tx.status == T(ru.urfu.entity.TransactionStatusEnum).PENDING}">
+                    <div class="btn-group btn-group-sm" role="group">
+
+                        <!-- Кнопка "Принять" -->
+                        <button type="button"
+                                class="btn btn-outline-success"
+                                data-bs-toggle="modal"
+                                data-bs-target="#confirmModal"
+                                data-action="approve"
+                                th:data-id="${tx.id}"
+                                title="Подтвердить пополнение">
+                            <i class="bi bi-check-circle-fill me-1"></i>Принять
+                        </button>
+
+                        <!-- Кнопка "Отклонить" -->
+                        <button type="button"
+                                class="btn btn-outline-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#confirmModal"
+                                data-action="reject"
+                                th:data-id="${tx.id}"
+                                title="Отклонить запрос">
+                            <i class="bi bi-x-circle-fill me-1"></i>Отклонить
+                        </button>
+
+                    </div>
+                </div>
+
+                <!-- Статус: Успешно -->
+                <span th:if="${tx.status == T(ru.urfu.entity.TransactionStatusEnum).SUCCESS}"
+                      class="badge bg-success fs-6 px-3 py-2">
+        <i class="bi bi-check-circle-fill me-1"></i>Принято
+    </span>
+
+                <!-- Статус: Отклонено -->
+                <span th:if="${tx.status == T(ru.urfu.entity.TransactionStatusEnum).FAILED}"
+                      class="badge bg-danger fs-6 px-3 py-2">
+        <i class="bi bi-x-circle-fill me-1"></i>Отклонено
+    </span>
+            </td>
+
+        </tr>
+        </tbody>
+    </table>
+    <div th:if="${#lists.isEmpty(pendingDeposits)}" class="alert alert-info">Нет ожидающих запросов.</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение действия</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Вы уверены?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmAction">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmAction = document.getElementById('confirmAction');
+
+        let currentAction = null;
+        let currentId = null;
+
+        confirmModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            currentAction = button.getAttribute('data-action');
+            currentId = button.getAttribute('data-id');
+
+            const actionText = currentAction === 'approve' ? 'принять' : 'отклонить';
+            confirmMessage.textContent = `Вы действительно хотите ${actionText} этот запрос?`;
+
+            confirmAction.className = currentAction === 'approve'
+                ? 'btn btn-success'
+                : 'btn btn-danger';
+            confirmAction.textContent = currentAction === 'approve' ? '✓ Принять' : '✗ Отклонить';
+        });
+
+        confirmAction.addEventListener('click', function() {
+            if (currentAction && currentId) {
+                // currentId уже содержит числовое значение из data-id="${tx.id}"
+                const form = document.createElement('form');
+                form.method = 'POST';
+                // Формируем URL с подставленным ID
+                form.action = `/support/payments/${currentAction}/${currentId}`;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+</script>
+</body>
+</html>

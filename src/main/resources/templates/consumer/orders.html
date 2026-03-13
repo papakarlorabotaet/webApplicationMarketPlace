@@ -2,39 +2,89 @@
 <html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
-    <title>Мои заказы | MarketPlace</title>
+    <title>Мои заказы (:(   </title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .profile-name {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .nav-links-horizontal {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1rem;
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0 0;
+        }
+
+        .nav-links-horizontal .separator {
+            color: #6c757d;
+        }
+
+        .balance-number {
+            font-size: 3rem;
+            font-weight: 500;
+            line-height: 1;
+        }
+    </style>
 </head>
 <body class="bg-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand" th:href="@{/}">MarketPlace</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<!-- Тёмная навигация, как на главной                                                       -------- -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}">MARKETPLACE</a>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" th:href="@{/list}">Каталог</a></li>
-                <li class="nav-item"><a class="nav-link" th:href="@{/shops}">Магазины</a></li>
-                <li class="nav-item"><a class="nav-link active" th:href="@{/consumer/orders}">Заказы</a></li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/messages}">
-                        Сообщения
-                        <span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" href="/messages">СООБЩЕНИЯ<span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
                     </a>
                 </li>
-                <li class="nav-item"><a class="nav-link" th:href="@{/cart}">Корзина</a></li>
-            </ul>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" th:href="@{/consumer/profile}">Мой профиль</a></li>
+
+                <li class="nav-item" sec:authorize="isAnonymous()">
+                    <a class="nav-link btn btn-outline-light btn-sm ms-lg-2" th:href="@{/login}">ВОЙТИ</a>
+                </li>
+
                 <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link text-danger" th:href="@{/logout}">Выйти</a>
+                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА <span class="badge bg-primary" th:text="${cartItemsCount}">0</span></a>
+                </li>
+
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#" id="profileDrop" data-bs-toggle="dropdown">
+                        ЛИЧНЫЙ КАБИНЕТ
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <div sec:authorize="hasRole('CONSUMER')">
+                            <li><a class="dropdown-item" th:href="@{/consumer/profile}">Мой профиль</a></li>
+                            <li><a class="dropdown-item" th:href="@{/consumer/orders}">Мои заказы</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SELLER')">
+                            <li><a class="dropdown-item" th:href="@{/seller/profile}">Панель продавца</a></li>
+                            <li><a class="dropdown-item" th:href="@{/seller/my-goods}">Мои товары</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SUPPORT')">
+                            <li><a class="dropdown-item" th:href="@{/support/profile}">Админ-панель</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/orders}">Модерация товаров</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/questions}">Модерация вопросов</a></li>
+                        </div>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/settings}">
+                                ⚙ Настройки профиля
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
+                    </ul>
                 </li>
             </ul>
         </div>
     </div>
 </nav>
+
 
 <main class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -43,13 +93,17 @@
 
     <div class="card shadow-sm">
         <div class="card-body">
+            <div th:if="${#lists.isEmpty(orders)}" class="text-center py-5">
+                <p class="text-muted">У вас пока нет заказов.</p>
+                <a href="/list" class="btn btn-primary">Перейти к покупкам</a>
+            </div>
+
             <div th:if="${not #lists.isEmpty(orders)}" class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                     <tr>
                         <th>Дата заказа</th>
-                        <th>Товар</th>
-                        <th>Количество</th>
+                        <th>Товары</th>
                         <th>Сумма</th>
                         <th>Статус</th>
                     </tr>
@@ -58,14 +112,14 @@
                     <tr th:each="order : ${orders}">
                         <td th:text="${#temporals.format(order.orderDate, 'dd.MM.yyyy HH:mm')}">01.01.2026</td>
                         <td class="fw-bold text-primary">
-                            <span th:each="item, stat : ${order.items}"
-                                  th:text="${item.goods.name} + (${!stat.last} ? ', ' : '')"></span>
+                            <span th:each="item, stat : ${order.items}">
+                                <span th:text="${item.goods.name}">Товар</span><span th:if="${!stat.last}">, </span>
+                            </span>
                         </td>
-                        <td th:text="${order.quantity} + ' шт.'">1 шт.</td>
                         <td th:text="${order.totalPrice} + ' ₽'">1000 ₽</td>
                         <td>
                             <span class="badge"
-                                  th:classappend="${order.status == 'CREATED' ? 'bg-primary' : (order.status == 'Оплачен' ? 'bg-success' : 'bg-secondary')}"
+                                  th:classappend="${order.status == 'Оплачен' ? 'bg-success' : 'bg-primary'}"
                                   th:text="${order.status}">Оплачен
                             </span>
                         </td>
@@ -73,3 +127,10 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

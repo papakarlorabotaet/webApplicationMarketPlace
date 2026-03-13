@@ -29,35 +29,65 @@
             font-weight: 500;
             line-height: 1;
         }
+        .nav-links-horizontal .nav-item.dropdown .dropdown-toggle {
+            padding: 0; /* чтобы не было лишних отступов, как у обычных ссылок */
+            color: inherit;
+        }
+        .nav-links-horizontal .nav-item.dropdown .dropdown-toggle::after {
+            margin-left: 0.3rem;
+        }
     </style>
 </head>
 <body class="bg-light">
 
-<!-- Тёмная навигация, как на главной -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand" href="/">MarketPlace</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+<!-- Тёмная навигация, как на главной                                                       -------- -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}">MARKETPLACE</a>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/list">Каталог</a></li>
-                <li class="nav-item"><a class="nav-link" href="/shops">Магазины</a></li>
-                <li class="nav-item"><a class="nav-link" href="/consumer/orders">Заказы</a></li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/messages">
-                        Сообщения
-
-                        <span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 5"></span>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" href="/messages">СООБЩЕНИЯ<span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
                     </a>
                 </li>
-                <li class="nav-item"><a class="nav-link" href="/cart">Корзина</a></li>
+
+                <li class="nav-item" sec:authorize="isAnonymous()">
+                    <a class="nav-link btn btn-outline-light btn-sm ms-lg-2" th:href="@{/login}">ВОЙТИ</a>
+                </li>
+
                 <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/logout}">Выйти</a>
+                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА <span class="badge bg-primary" th:text="${cartItemsCount}">0</span></a>
+                </li>
+
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#" id="profileDrop" data-bs-toggle="dropdown">
+                        ЛИЧНЫЙ КАБИНЕТ
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <div sec:authorize="hasRole('CONSUMER')">
+                            <li><a class="dropdown-item" th:href="@{/consumer/profile}">Мой профиль</a></li>
+                            <li><a class="dropdown-item" th:href="@{/consumer/orders}">Мои заказы</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SELLER')">
+                            <li><a class="dropdown-item" th:href="@{/seller/profile}">Панель продавца</a></li>
+                            <li><a class="dropdown-item" th:href="@{/seller/my-goods}">Мои товары</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SUPPORT')">
+                            <li><a class="dropdown-item" th:href="@{/support/profile}">Админ-панель</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/orders}">Модерация товаров</a></li>
+                            <li><a class="dropdown-item" th:href="@{/support/questions}">Модерация вопросов</a></li>
+                        </div>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/settings}">
+                                ⚙ Настройки профиля
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
+                    </ul>
                 </li>
             </ul>
-
         </div>
     </div>
 </nav>
@@ -79,15 +109,41 @@
 
                     <!-- Горизонтальные ссылки с разделителями -->
                     <ul class="nav-links-horizontal">
-                        <li><a href="#" class="text-decoration-none">Безопасность</a></li>
+                        <li><a href="/consumer/security" class="text-decoration-none">Безопасность</a></li>
                         <li class="separator">|</li>
-                        <li><a href="#" class="text-decoration-none">Мои отзывы</a></li>
+                        <li><a href="/consumer/my-reviews" class="text-decoration-none">Мои отзывы</a></li>
                         <li class="separator">|</li>
-                        <li><a href="#" class="text-decoration-none">Кэшбэк</a></li>
+                        <li><a href="/consumer/cashback" class="text-decoration-none">Кэшбэк</a></li>
                         <li class="separator">|</li>
-                        <li><a href="#" class="text-decoration-none">Купоны</a></li>
+                        <li><a href="#" id="open-coupon-modal" class="text-decoration-none">Купоны</a></li>
                         <li class="separator">|</li>
-                        <li><a href="#" class="text-decoration-none">Логи</a></li>
+                        <li><a href="/consumer/payments" class="text-decoration-none">Платежи</a></li>
+
+
+                        <li class="nav-item dropdown" style="list-style: none;">
+                            <a class="nav-link dropdown-toggle text-decoration-none" href="#" id="ordersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                История заказов
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="ordersDropdown" style="max-height: 300px; overflow-y: auto;">
+                                <!-- Список последних заказов -->
+                                <li th:each="order : ${recentOrders}">
+                                    <a class="dropdown-item" th:href="@{/consumer/order/{id}(id=${order.id})}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span th:text="${#temporals.format(order.orderDate, 'dd.MM')}">12.04</span>
+                                            <span class="badge" th:classappend="${order.StatusGoods == 'Оплачен' ? 'bg-success' : (order.StatusGoods == 'Доставлен' ? 'bg-primary' : 'bg-secondary')}"
+                                                  th:text="${order.StatusGoods}">Оплачен</span>
+                                        </div>
+                                        <small class="text-muted" th:text="'№' + ${order.id} + ' · ' + ${order.totalPrice} + ' ₽'">№123 · 1 500 ₽</small>
+                                    </a>
+                                </li>
+                                <!-- Разделитель, если есть заказы -->
+                                <li th:if="${not #lists.isEmpty(recentOrders)}"><hr class="dropdown-divider"></li>
+                                <!-- Ссылка на все заказы -->
+                                <li><a class="dropdown-item fw-bold text-primary" th:href="@{/consumer/orders}">Все заказы →</a></li>
+                                <!-- Если заказов нет -->
+                                <li th:if="${#lists.isEmpty(recentOrders)}"><span class="dropdown-item-text text-muted">Нет заказов</span></li>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
             </div>

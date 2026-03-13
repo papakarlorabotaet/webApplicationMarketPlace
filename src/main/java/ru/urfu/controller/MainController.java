@@ -67,16 +67,6 @@ public class MainController {
         }
 
 
-
-        int cartCount = 0;
-        long messageCount = 0;
-        if (userDetails != null) {
-            User user = userRepository.findByEmail(userDetails.getUsername());
-            cartCount = cartService.getCartByUser(user).getItems().size(); //циферка корзины
-            messageCount = messageRepository;
-        }
-
-
         model.addAttribute("categories", categoryRepository.findAll());
         // Передаем sellerEmailFilter в сервис
         List<GoodsDto> goods = goodsService.findFilteredGoods(categoryId, search, minPrice, maxPrice, sellerEmailFilter);
@@ -87,10 +77,6 @@ public class MainController {
         model.addAttribute("minPrice", minPrice);
         model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("onlyMine", onlyMine); // Чтобы галочка не слетала
-        model.addAttribute("cartItemsCount", cartCount); //передаем корзину
-        model.addAttribute("unreadMessagesCount", messageCount);
-
-
         return "list";
     }
 

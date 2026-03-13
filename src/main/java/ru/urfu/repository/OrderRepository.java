@@ -13,7 +13,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
 
     @Query("SELECT DISTINCT o FROM Order o JOIN o.items i JOIN i.goods g WHERE g.user = :seller")
-    List<Order> findOrdersByGoodsUser(@Param("seller") User seller);
+    List<Order> findOrdersByGoodsSeller(@Param("seller") User seller);
+
 
     // Добавляем @Query, так как товар теперь лежит внутри коллекции items
     @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END FROM Order o JOIN o.items i WHERE o.buyer = :consumer AND i.goods = :goods")

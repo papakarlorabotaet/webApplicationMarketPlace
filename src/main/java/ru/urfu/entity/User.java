@@ -40,7 +40,9 @@ public class User {
     private LocalDateTime registrationDate;
 
 
-    private BigDecimal accountBalance;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal accountBalance = BigDecimal.ZERO;
+
     private int accountAmount;
 
     @ManyToMany(fetch = FetchType.EAGER)

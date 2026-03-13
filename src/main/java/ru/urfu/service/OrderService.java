@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface OrderService {
     List<Order> findOrdersBySeller(User user);
+    List<Order> findOrdersByBuyer(User user);
     void importOrders(MultipartFile file, String userEmail);
 }

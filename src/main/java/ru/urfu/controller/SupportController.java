@@ -5,21 +5,21 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import ru.urfu.entity.*;
 
-import ru.urfu.entity.GoodsQuestionStatus;
+
+import ru.urfu.repository.TransactionRepository;
 import ru.urfu.repository.UserRepository;
 import ru.urfu.service.GoodsQuestionService;
 import ru.urfu.service.GoodsService;
+import ru.urfu.service.PaymentService;
 import ru.urfu.service.UserService;
 
 import java.util.List;
 
 @Controller
+@RequestMapping("/support")
 public class SupportController {
 
 
@@ -27,15 +27,22 @@ public class SupportController {
     private final UserRepository userRepository;
     private final GoodsService goodsService;
     private final GoodsQuestionService goodsQuestionService;
+    private final PaymentService paymentService;
+    private final TransactionRepository transactionRepository;
+
 
     @Autowired
     public SupportController(UserRepository userRepository,
                              UserService userService,
-                             GoodsService goodsService, GoodsQuestionService goodsQuestionService){
+                             GoodsService goodsService,
+                             GoodsQuestionService goodsQuestionService,
+                             PaymentService paymentService, TransactionRepository transactionRepository) {
         this.userService = userService;
         this.userRepository = userRepository;
         this.goodsService = goodsService;
         this.goodsQuestionService = goodsQuestionService;
+        this.paymentService = paymentService;
+        this.transactionRepository = transactionRepository;
     }
 
     @GetMapping("/users")
@@ -53,11 +60,11 @@ public class SupportController {
 
     @GetMapping("/deleteUser")
     public String deleteSeller(@RequestParam String userEmail,
-                             @AuthenticationPrincipal UserDetails userDetails){
-         User userDelete = userRepository.findByEmail(userEmail); //полчаем инфу
+                               @AuthenticationPrincipal UserDetails userDetails) {
+        User userDelete = userRepository.findByEmail(userEmail); //полчаем инфу
 
         userService.deleteUserById(userDelete.getId()); //удаляем пользователя из базы
-        return "redirect:/users";
+        return "redirect:/support/users";
     }
 
 
@@ -67,7 +74,7 @@ public class SupportController {
 //        return "redirect:/support/orders";
 //    }
 
-    @GetMapping("/support/profile")
+    @GetMapping("/profile")
     public String supportProfile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User user = userRepository.findByEmail(userDetails.getUsername());
         model.addAttribute("user", user);
@@ -80,7 +87,7 @@ public class SupportController {
 
 
     // Панель АДМИНА: Модерация
-    @GetMapping("/support/orders")
+    @GetMapping("/orders")
     public String supportModeration(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User user = userRepository.findByEmail(userDetails.getUsername());
         model.addAttribute("user", user);
@@ -91,7 +98,7 @@ public class SupportController {
 
     // Действие АДМИНА: Одобрение
 
-    @PostMapping("/support/approve/{id}")
+    @PostMapping("/orders/approve/{id}")
     public String approve(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         User admin = userRepository.findByEmail(userDetails.getUsername());
         goodsService.updateStatus(id, GoodsStatus.APPROVED, admin);
@@ -100,7 +107,7 @@ public class SupportController {
 
 
     // Действие АДМИНА: Отклонение
-    @PostMapping("/support/reject/{id}")
+    @PostMapping("/orders/reject/{id}")
     public String reject(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         User admin = userRepository.findByEmail(userDetails.getUsername());
         goodsService.updateStatus(id, GoodsStatus.REJECTED, admin);
@@ -110,7 +117,7 @@ public class SupportController {
     // === БЛОК МОДЕРАЦИИ ВОПРОСОВ К ТОВАРАМ ===
 
     // Страница со списком вопросов, ожидающих модерации
-    @GetMapping("/support/questions")
+    @GetMapping("/questions")
     public String supportQuestionsModeration(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User user = userRepository.findByEmail(userDetails.getUsername());
         model.addAttribute("user", user);
@@ -118,21 +125,53 @@ public class SupportController {
 
         model.addAttribute("pendingQuestions", goodsQuestionService.findAllPendingQuestions());
 
-        return "support/questions"; // Нужно будет создать HTML шаблон support/questions.html
+        return "/support/questions";
     }
 
     // Одобрить вопрос (после этого он появится в карточке товара)
-    @PostMapping("/support/questions/approve/{id}")
+    @PostMapping("/questions/approve/{id}")
     public String approveQuestion(@PathVariable Long id) {
-         goodsQuestionService.updateStatus(id, GoodsQuestionStatus.APPROVED);
+        goodsQuestionService.updateStatus(id, GoodsQuestionStatus.APPROVED);
         return "redirect:/support/questions";
     }
 
     // Отклонить/удалить вопрос
-    @PostMapping("/support/questions/reject/{id}")
+    @PostMapping("/questions/reject/{id}")
     public String rejectQuestion(@PathVariable Long id) {
-         goodsQuestionService.updateStatus(id, GoodsQuestionStatus.REJECTED);
+        goodsQuestionService.updateStatus(id, GoodsQuestionStatus.REJECTED);
         return "redirect:/support/questions";
     }
+
+
+    @GetMapping("/payments/user/{email}")
+    public String getUserPayments(@PathVariable String email, Model model) {
+        // Получаем платежи только для этого пользователя
+        List<Transaction> userTransactions = transactionRepository.findByUserAndStatus(userRepository.findByEmail(email), TransactionStatusEnum.PENDING);
+
+        model.addAttribute("pendingDeposits", userTransactions);
+        model.addAttribute("targetUser", email); // Чтобы отобразить в заголовке, чьи это платежи
+        return "/support/payments"; // Используем ваш payments.html
+    }
+
+    @PostMapping("/payments/approve/{id}")
+    public String approveDeposit(@PathVariable Long id) {
+        paymentService.approveDeposit(id);
+        Transaction tx = transactionRepository.findById(id).orElse(null);
+        if (tx != null && tx.getUser() != null) {
+            return "redirect:/support/payments/user/" + tx.getUser().getEmail();
+        }
+        return "redirect:/support/users"; // Фолбэк, если что-то пошло не так
+    }
+
+    @PostMapping("/payments/reject/{id}")
+    public String rejectDeposit(@PathVariable Long id) {
+        paymentService.rejectDeposit(id);
+        Transaction tx = transactionRepository.findById(id).orElse(null);
+        if (tx != null && tx.getUser() != null) {
+            return "redirect:/support/payments/user/" + tx.getUser().getEmail();
+        }
+        return "redirect:/support/users";
+    }
+
 
 }

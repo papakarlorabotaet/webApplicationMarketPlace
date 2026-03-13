@@ -51,17 +51,9 @@ public class SellerController {
     @GetMapping("/profile")
     public String profile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         User seller = userRepository.findByEmail(userDetails.getUsername());
-
-        int cartCount = 0;
-        if (userDetails != null) {
-            User user = userRepository.findByEmail(userDetails.getUsername());
-            cartCount = cartService.getCartByUser(user).getItems().size(); //циферка корзины
-        }
         model.addAttribute("user", seller);
         model.addAttribute("orders", orderService.findOrdersBySeller(seller));
         model.addAttribute("myGoods", goodsService.findGoodsByUserEmail(seller.getEmail()));
-        model.addAttribute("cartItemsCount", cartCount);
-        unreadMessagesCount
         return "seller/profileSeller";
     }
 

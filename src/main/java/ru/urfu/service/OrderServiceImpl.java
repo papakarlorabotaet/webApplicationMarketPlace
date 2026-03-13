@@ -33,11 +33,17 @@ public class OrderServiceImpl implements OrderService {
         this.userRepository = userRepository;
         this.goodsRepository = goodsRepository;
     }
-
+    @Transactional
     @Override
     public List<Order> findOrdersBySeller(User seller) {
         // Используем метод репозитория, который ищет заказы по товарам продавца
-        return orderRepository.findOrdersByGoodsUser(seller);
+        return orderRepository.findOrdersByGoodsSeller(seller);
+    }
+    @Transactional
+    @Override
+    public List<Order> findOrdersByBuyer(User consumer) {
+        // Используем метод репозитория, который ищет заказы по товарам покупателя
+        return orderRepository.findByBuyer(consumer);
     }
 
     @Override

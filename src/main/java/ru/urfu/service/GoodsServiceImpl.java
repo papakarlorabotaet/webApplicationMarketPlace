@@ -6,14 +6,13 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.urfu.dto.GoodsDto;
 import ru.urfu.entity.Goods;
 import ru.urfu.entity.GoodsStatus;
-
 import ru.urfu.entity.Message;
 import ru.urfu.entity.User;
 import ru.urfu.repository.GoodsRepository;
 import ru.urfu.repository.MessageRepository;
+import ru.urfu.repository.ReviewRepository; // 🔥 Добавляем
 import ru.urfu.repository.UserRepository;
 
-import javax.persistence.EntityNotFoundException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
@@ -28,36 +27,40 @@ public class GoodsServiceImpl implements GoodsService {
     private final GoodsRepository goodsRepository;
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
+    private final ReviewRepository reviewRepository; // 🔥 Добавляем поле
 
     public GoodsServiceImpl(GoodsRepository goodsRepository,
                             UserRepository userRepository,
-                            MessageRepository messageRepository) {
+                            MessageRepository messageRepository,
+                            ReviewRepository reviewRepository) { // 🔥 Добавляем в конструктор
         this.goodsRepository = goodsRepository;
         this.userRepository = userRepository;
         this.messageRepository = messageRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     @Override
     public void saveGoods(GoodsDto goodsDto, String email) {
-        // Находим пользователя (который выступает в роли продавца)
         User user = userRepository.findByEmail(email);
         if (user == null) {
-            throw new EntityNotFoundException("Пользователь с email " + email + " не найден");
+            throw new RuntimeException("Пользователь с email " + email + " не найден");
         }
 
         Goods goods = new Goods();
-//        goods.setsellerName(goodsDto.getSellerName());
         goods.setName(goodsDto.getName());
         goods.setDescription(goodsDto.getDescription());
         goods.setPrice(goodsDto.getPrice());
-        goods.setUser(user); // Привязываем к User (в сущности Goods поле должно называться user)
+        goods.setQuantity(goodsDto.getQuantity()); // 🔥 Исправлено: было goods.getQuantity()
+        goods.setUser(user);
         goods.setModerationStatus(GoodsStatus.PENDING);
         goods.setDeliveryStatus(0);
+        goods.setAverageRating(0.0);  // 🔥 Инициализируем рейтинг
+        goods.setReviewCount(0L);     // 🔥 Инициализируем счётчик
 
         goodsRepository.save(goods);
     }
 
-    @Override //Метод поиска товаров (для каталога)
+    @Override
     public List<GoodsDto> searchGoods(String name) {
         return goodsRepository.findByNameContainingIgnoreCase(name)
                 .stream()
@@ -73,7 +76,7 @@ public class GoodsServiceImpl implements GoodsService {
     @Override
     public Goods findGoodsById(Long id) {
         return goodsRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Товар с id " + id + " не найден"));
+                .orElseThrow(() -> new RuntimeException("Товар с id " + id + " не найден"));
     }
 
     @Override
@@ -88,25 +91,21 @@ public class GoodsServiceImpl implements GoodsService {
         return goodsRepository.findByCategoryId(categoryId).stream()
                 .filter(goods -> goods.getModerationStatus() == GoodsStatus.APPROVED)
                 .map(this::goodsToGoodsDto)
-                .collect(java.util.stream.Collectors.toList());
-    }
-
-//    @Override
-//    public List<GoodsDto> findAllApprovedGoods() {
-//        return goodsRepository.findByModerationStatus(GoodsStatus.APPROVED).stream()
-//                .map(this::goodsToGoodsDto)
-//                .collect(Collectors.toList());
-//    }
-
-    @Override
-    public List<GoodsDto> findFilteredGoods(Long categoryId, String search, BigDecimal minPrice, BigDecimal maxPrice, String sellerEmail) {
-        return goodsRepository.findFilteredGoods(categoryId, search, minPrice, maxPrice, GoodsStatus.APPROVED, sellerEmail)
-                .stream()
-                .map(this::goodsToGoodsDto)
                 .collect(Collectors.toList());
     }
 
-
+    @Override
+    public List<GoodsDto> findFilteredGoods(Long categoryId,
+                                            String search,
+                                            BigDecimal minPrice,
+                                            BigDecimal maxPrice,
+                                            String sellerEmail) {
+        return goodsRepository.findFilteredGoods(categoryId, search, minPrice, maxPrice,
+                        GoodsStatus.APPROVED, sellerEmail)
+                .stream()
+                .map(this::goodsToGoodsDto)  // 🔥 Рейтинг подставляется внутри goodsToGoodsDto
+                .collect(Collectors.toList());
+    }
 
     @Override
     public List<GoodsDto> findAllPendingGoods() {
@@ -122,47 +121,62 @@ public class GoodsServiceImpl implements GoodsService {
                 .collect(Collectors.toList());
     }
 
-
     @Override
     public void updateStatus(Long id, GoodsStatus status, User sender) {
-        Goods goods = goodsRepository.findById(id).orElseThrow();
+        Goods goods = goodsRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Товар не найден"));
+
         goods.setModerationStatus(status);
         goodsRepository.save(goods);
 
-        // Уведомление продавцу в чат
+        // Уведомление продавцу
         Message msg = new Message();
         msg.setSender(sender);
         msg.setReceiver(goods.getUser());
-        msg.setContent("Статус вашего товара '" + goods.getName() + "' обновлен на: " + status);
+        msg.setContent("Статус вашего товара '" + goods.getName() + "' обновлён на: " + status);
         msg.setTimestamp(java.time.LocalDateTime.now());
-        // Отправителя можно оставить null (системное)
         messageRepository.save(msg);
     }
 
     @Override
     public GoodsDto goodsToGoodsDto(Goods goods) {
         GoodsDto dto = new GoodsDto();
-        dto.setSellerName(goods.getUser().getName());
-        dto.setSellerEmail(goods.getUser().getEmail());
-        dto.setImagePath(goods.getImagePath());
         dto.setId(goods.getId());
         dto.setName(goods.getName());
         dto.setDescription(goods.getDescription());
         dto.setPrice(goods.getPrice());
         dto.setQuantity(goods.getQuantity());
-        // При необходимости можно добавить статус модерации или email продавца
+        dto.setImagePath(goods.getImagePath());
+        dto.setModerationStatus(goods.getModerationStatus());
+
+        // Продавец
+        if (goods.getUser() != null) {
+            dto.setSellerName(goods.getUser().getName());
+            dto.setSellerEmail(goods.getUser().getEmail());
+        }
+
+
+        if (goods.getAverageRating() != null) {
+            dto.setAverageRating(goods.getAverageRating());
+            dto.setReviewCount(goods.getReviewCount() != null ? goods.getReviewCount() : 0L);
+        } else {
+            // Fallback: считаем из Reviews, если не хранится в Goods
+            dto.setAverageRating(calculateAverageRating(goods));
+            dto.setReviewCount(reviewRepository.countByGoods(goods));
+        }
+
         return dto;
     }
 
     @Override
     public void updateGoods(GoodsDto goodsDto) {
-
         Goods goods = goodsRepository.findById(goodsDto.getId())
                 .orElseThrow(() -> new RuntimeException("Товар не найден"));
 
         goods.setName(goodsDto.getName());
         goods.setDescription(goodsDto.getDescription());
         goods.setPrice(goodsDto.getPrice());
+        goods.setQuantity(goodsDto.getQuantity());
 
         goodsRepository.save(goods);
     }
@@ -179,7 +193,7 @@ public class GoodsServiceImpl implements GoodsService {
                 if (isFirstLine) {
                     isFirstLine = false;
                     continue;
-                } // Пропуск заголовка
+                }
 
                 String[] parts = line.split(",");
                 if (parts.length < 3 || parts[0].isBlank()) continue;
@@ -187,16 +201,17 @@ public class GoodsServiceImpl implements GoodsService {
                 Goods goods = new Goods();
                 goods.setName(parts[0].trim());
                 goods.setDescription(parts[1].trim());
-                try {// Парсим цену как BigDecimal
+                try {
                     BigDecimal price = new BigDecimal(parts[2].trim());
                     goods.setPrice(price);
                 } catch (NumberFormatException e) {
-                    // Можно выбросить исключение
                     throw new RuntimeException("Неверный формат цены в строке: " + line);
                 }
                 goods.setUser(seller);
                 goods.setModerationStatus(GoodsStatus.PENDING);
                 goods.setDeliveryStatus(0);
+                goods.setAverageRating(0.0);
+                goods.setReviewCount(0L);
 
                 goodsList.add(goods);
             }
@@ -206,5 +221,9 @@ public class GoodsServiceImpl implements GoodsService {
         }
     }
 
-
+    // 🔥 Вспомогательный метод для расчёта рейтинга
+    private Double calculateAverageRating(Goods goods) {
+        Double avg = reviewRepository.getAverageRating(goods);
+        return avg != null ? avg : 0.0;
+    }
 }

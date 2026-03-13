@@ -29,8 +29,7 @@ public class GoodsQuestionServiceImpl implements GoodsQuestionService {
 
     @Override
     public void updateStatus(Long questionId, GoodsQuestionStatus status) {
-        GoodsQuestion goodsQuestion = goodsQuestionRepository.findById(questionId)
-                .orElseThrow(() -> new RuntimeException("Вопрос не найден"));
+        GoodsQuestion goodsQuestion = goodsQuestionRepository.findById(questionId).get();
         goodsQuestion.setStatus(status);
         goodsQuestionRepository.save(goodsQuestion);
     }
@@ -38,5 +37,10 @@ public class GoodsQuestionServiceImpl implements GoodsQuestionService {
     @Override
     public void saveQuestion(GoodsQuestion goodsQuestion) {
         goodsQuestionRepository.save(goodsQuestion);
+    }
+
+    @Override
+    public GoodsQuestion findById(Long questionId) {
+        return goodsQuestionRepository.findById(questionId).orElse(null);
     }
 }

@@ -27,12 +27,24 @@
         .card-header {
             font-weight: bold;
         }
+
+        /* Стили как на главной странице */
+        .card-img-top {
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .badge-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
     </style>
 </head>
 <body class="bg-light">
 
 <!-- Navigation (same as profileSeller) -->
-
 
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
@@ -42,7 +54,8 @@
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/messages">СООБЩЕНИЯ<span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
+                    <a class="nav-link" href="/messages">СООБЩЕНИЯ<span class="badge bg-secondary"
+                                                                        th:text="${unreadMessagesCount} ?: 0">0</span>
                     </a>
                 </li>
 
@@ -50,8 +63,9 @@
                     <a class="nav-link btn btn-outline-light btn-sm ms-lg-2" th:href="@{/login}">ВОЙТИ</a>
                 </li>
 
-                <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА <span class="badge bg-primary" th:text="${cartItemsCount}">0</span></a>
+                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
+                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА <span class="badge bg-primary"
+                                                                         th:text="${cartItemsCount}">0</span></a>
                 </li>
 
                 <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
@@ -77,7 +91,9 @@
                                 ⚙ Настройки профиля
                             </a>
                         </li>
-                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
                         <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
                     </ul>
                 </li>
@@ -86,38 +102,6 @@
     </div>
 </nav>
 
-
-
-
-
-
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand" href="/">MarketPlace</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/list">Каталог</a></li>
-                <li class="nav-item"><a class="nav-link" href="/shops">Магазины</a></li>
-                <li class="nav-item"><a class="nav-link active" href="/seller/profile">Панель продавца</a></li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/messages">
-                        Сообщения
-                        <span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
-                    </a>
-                </li>
-            </ul>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/logout}">Выйти</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
 
 <main class="container mt-4">
     <div class="row g-4">
@@ -175,46 +159,82 @@
             </div>
         </div>
     </div>
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
             <h5 class="mb-0">Мои товары на витрине</h5>
             <div>
-                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">+ Добавить товар</button>
-                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">Импорт</button>
+                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">+
+                    Добавить товар
+                </button>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
+                    Импорт
+                </button>
             </div>
         </div>
-        <div class="card-body bg-light">
-            <div th:if="${not #lists.isEmpty(myGoods)}" class="row row-cols-1 row-cols-md-3 g-4">
-                <div class="col" th:each="item : ${myGoods}">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="position-relative">
-                            <img th:src="${item.imagePath != null ? '/uploads/' + item.imagePath : 'https://via.placeholder.com/300x200'}"
-                                 class="card-img-top product-image" alt="Товар"/>
+    </div>
 
-                            <div class="position-absolute top-0 end-0 p-2">
-                                <span th:if="${item.moderationStatus != null and item.moderationStatus.name() == 'PENDING'}" class="badge rounded-pill bg-warning text-dark shadow-sm">⏳ Модерация</span>
-                                <span th:if="${item.moderationStatus != null and item.moderationStatus.name() == 'APPROVED'}" class="badge rounded-pill bg-success shadow-sm">✅ Одобрен</span>
-                                <span th:if="${item.moderationStatus != null and item.moderationStatus.name() == 'REJECTED'}" class="badge rounded-pill bg-danger shadow-sm">❌ Отклонен</span>
-                            </div>
-                        </div>
+    <!-- Сетка товаров -->
+    <div th:if="${not #lists.isEmpty(myGoods)}" class="row row-cols-1 row-cols-md-3 g-4">
+        <div class="col" th:each="item : ${myGoods}">
+            <div class="card h-100 shadow-sm border-0">
 
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title fw-bold mb-1" th:text="${item.name}">Название</h5>
-                            <p class="card-text text-muted small text-truncate" th:text="${item.description}">Описание</p>
-                            <h4 class="text-primary mb-3"><span th:text="${item.price}">0</span> ₽</h4>
+                <!-- Изображение и Статус -->
+                <div class="position-relative">
+                    <img th:src="${item.imagePath != null ? '/uploads/' + item.imagePath : 'https://via.placeholder.com/300x200'}"
+                         class="card-img-top" alt="Товар">
 
-                            <div class="mt-auto d-grid gap-2">
-                                <a th:href="@{/seller/goods/edit/{id}(id=${item.id})}" class="btn btn-sm btn-outline-primary">✎ Редактировать</a>
-                                <a th:href="@{/seller/goods/{id}/stats(id=${item.id})}" class="btn btn-sm btn-outline-secondary">📊 Статистика</a>
-                            </div>
-                        </div>
+
+                    <span th:if="${item.moderationStatus != null}"
+                          th:classappend="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).PENDING} ? 'bg-warning text-dark' :
+                                        (${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).APPROVED} ? 'bg-success' : 'bg-danger')"
+                          class="badge badge-status rounded-pill shadow-sm">
+                    <span th:if="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).PENDING}">⏳ Модерация</span>
+                    <span th:if="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).APPROVED}">✅ Одобрен</span>
+                    <span th:if="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).REJECTED}">❌ Отклонен</span>
+                </span>
+                </div>
+
+                <!-- Тело карточки (как на главной) -->
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title fw-bold" th:text="${item.name}">Название товара</h5>
+                        <span class="badge bg-primary" th:text="${item.price} + ' ₽'">0 ₽</span>
+                    </div>
+                    <p class="card-text text-truncate text-muted" th:text="${item.description}">Описание товара...</p>
+
+                    <!-- Инфо о наличии (если есть поле quantity) -->
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            В наличии: <span class="fw-bold" th:text="${item.quantity} ?: 0">0</span> шт.
+                        </small>
                     </div>
                 </div>
-            </div>
-            <div th:if="${#lists.isEmpty(myGoods)}" class="alert alert-light text-center border py-5">
-                У вас пока нет товаров.
+
+                <!-- Подвал карточки (адаптирован под продавца) -->
+                <div class="card-footer bg-white border-top-0 pb-3">
+                    <div class="d-grid gap-2">
+                        <!-- Кнопка Редактировать (только если товар одобрен или на модерации) -->
+                        <a th:href="@{/seller/goods/edit/{id}(id=${item.id})}"
+                           class="btn btn-outline-primary btn-sm"
+                           th:classappend="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).REJECTED} ? 'btn-warning' : ''"
+                           th:text="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).REJECTED} ? '✎ Исправить и отправить' : '✎ Редактировать'">
+                        </a>
+
+                        <!-- Кнопка Статистика -->
+                        <a th:href="@{/seller/goods/{id}/stats(id=${item.id})}"
+                           class="btn btn-outline-secondary btn-sm">📊 Статистика</a>
+                    </div>
+                </div>
+
             </div>
         </div>
+    </div>
+    <div th:if="${#lists.isEmpty(myGoods)}" class="alert alert-light text-center border py-5">
+        <h5>У вас пока нет товаров</h5>
+        <p class="text-muted mb-3">Добавьте первый товар, чтобы он появился на витрине</p>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">Добавить товар</button>
+    </div>
+    </div>
     </div>
 </main>
 

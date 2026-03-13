@@ -44,6 +44,12 @@ public class Goods {
     @Column(name = "price") //Цена товара
     private BigDecimal price;
 
+    @Column(name = "average_rating")
+    private Double averageRating = 0.0;
+
+    @Column(name = "review_count")
+    private Long reviewCount = 0L;
+
 
     @Column(name = "quantity") //кол-во товара
     private Long quantity;
@@ -59,4 +65,7 @@ public class Goods {
     @OneToMany(mappedBy = "goods", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GoodsQuestion> questions = new ArrayList<>();
 
+    public GoodsStatus getModerationStatus() {
+        return moderationStatus;
+    }
 }

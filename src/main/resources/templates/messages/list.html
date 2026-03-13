@@ -9,6 +9,8 @@
         .chat-list-item:hover { background-color: #f8f9fa; }
         .chat-list-item.active { background-color: #e9ecef; border-left-color: #0d6efd; }
         .message-preview { font-size: 0.9rem; color: #6c757d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .unread-bg { background-color: #f0f7ff !important; } /* Легкий голубой фон */
+        .unread-text { font-weight: 800 !important; color: #000; } /* Жирный текст */
     </style>
 </head>
 <body class="bg-light">
@@ -29,30 +31,65 @@
 
 <div class="container">
     <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white py-3">
-                    <h5 class="mb-0 fw-bold">Ваши диалоги</h5>
+        <div class="container-fluid px-4">
+            <div class="row" style="height: 80vh;">
+                <div class="col-md-4 col-lg-3 border-end bg-white overflow-auto p-0">
+                    <div class="list-group list-group-flush">
+                        <a th:each="msg : ${messages}"
+                           th:href="@{/messages/chat/{id}(id=${msg.sender.email == #authentication.name ? msg.receiver.id : msg.sender.id})}"
+                           class="list-group-item list-group-item-action p-3 chat-list-item"
+                           th:classappend="${companion != null && (msg.sender.id == companion.id || msg.receiver.id == companion.id)} ? 'active' : ''">
+
+                            <div class="d-flex justify-content-between">
+                                <strong th:classappend="${!msg.isRead && msg.receiver.email == #authentication.name} ? 'text-primary' : ''"
+                                        th:text="${msg.sender.email == #authentication.name ? msg.receiver.name : msg.sender.name}">Имя</strong>
+                                <small class="text-muted" th:text="${#temporals.format(msg.timestamp, 'HH:mm')}"></small>
+                            </div>
+                            <div class="message-preview small text-muted" th:text="${msg.content}"></div>
+                        </a>
+                    </div>
                 </div>
 
-                <div class="list-group list-group-flush">
-                    <!-- Цикл по сообщениям/диалогам -->
-                    <div th:each="msg : ${messages}" class="list-group-item chat-list-item p-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-1 fw-bold" th:text="${msg.senderEmail == #authentication.name ? 'Вы -> ' + msg.recipientEmail : msg.senderEmail}">Собеседник</h6>
-                            <small class="text-muted" th:text="${#temporals.format(msg.timestamp, 'dd.MM HH:mm')}">12.03 15:00</small>
+                <div class="col-md-8 col-lg-9 d-flex flex-column bg-white">
+                    <div th:if="${companion != null}" class="h-100 d-flex flex-column">
+                        <div class="p-3 border-bottom shadow-sm">
+                            <h5 class="mb-0" th:text="'Чат с ' + ${companion.name}">Чат</h5>
                         </div>
-                        <p class="message-preview mb-0" th:text="${msg.content}">Текст последнего сообщения...</p>
+
+                        <div class="flex-grow-1 overflow-auto p-4 bg-light" id="chatWindow">
+                            <div th:each="m : ${chatHistory}" class="mb-3 d-flex"
+                                 th:classappend="${m.sender.email == #authentication.name} ? 'justify-content-end' : 'justify-content-start'">
+                                <div class="p-3 rounded shadow-sm"
+                                     th:style="${m.sender.email == #authentication.name} ? 'max-width: 70%; background-color: #dcf8c6;' : 'max-width: 70%; background-color: #fff;'">
+                                    <div th:text="${m.content}"></div>
+                                    <small class="text-muted d-block text-end" style="font-size: 0.7rem;"
+                                           th:text="${#temporals.format(m.timestamp, 'HH:mm')}"></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 border-top">
+                            <form th:action="@{/messages/send}" method="post" class="d-flex">
+                                <input type="hidden" name="receiverId" th:value="${companion.id}">
+                                <input type="text" name="content" class="form-control me-2" placeholder="Введите сообщение..." required autocomplete="off">
+                                <button type="submit" class="btn btn-primary">Отправить</button>
+                            </form>
+                        </div>
                     </div>
 
-                    <!-- Если сообщений нет -->
-                    <div th:if="${#lists.isEmpty(messages)}" class="p-5 text-center">
-                        <p class="text-muted">У вас пока нет активных переписок.</p>
-                        <a th:href="@{/list}" class="btn btn-primary btn-sm">Перейти в каталог</a>
+                    <div th:unless="${companion != null}" class="m-auto text-center text-muted">
+                        <i class="bi bi-chat-dots" style="font-size: 3rem;"></i>
+                        <p>Выберите диалог, чтобы начать общение</p>
                     </div>
                 </div>
             </div>
         </div>
+
+        <script>
+            // Автопрокрутка чата вниз при загрузке
+            var objDiv = document.getElementById("chatWindow");
+            if(objDiv) objDiv.scrollTop = objDiv.scrollHeight;
+        </script>
     </div>
 </div>
 

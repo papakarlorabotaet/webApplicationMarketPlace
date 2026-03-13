@@ -4,9 +4,30 @@
     <meta charset="UTF-8">
     <title>Список товаров | Маркетплейс</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .card-img-top { height: 200px; object-fit: cover; }
-        .badge-status { position: absolute; top: 10px; right: 10px; }
+        .card-img-top {
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .star-rating {
+            color: #ffc107;
+            font-size: 0.9rem;
+        }
+
+        .product-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .product-link:hover {
+            color: #0d6efd;
+        }
+
+        .review-btn {
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -17,15 +38,19 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
-
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" href="/messages">СООБЩЕНИЯ
+                        <span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
+                    </a>
+                </li>
                 <li class="nav-item" sec:authorize="isAnonymous()">
                     <a class="nav-link btn btn-outline-light btn-sm ms-lg-2" th:href="@{/login}">ВОЙТИ</a>
                 </li>
-
-                <li class="nav-item" sec:authorize="isAuthenticated()">
-                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА <span class="badge bg-primary" th:text="${cartItemsCount}">0</span></a>
+                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
+                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА
+                        <span class="badge bg-primary" th:text="${cartItemsCount}">0</span>
+                    </a>
                 </li>
-
                 <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
                     <a class="nav-link dropdown-toggle" href="#" id="profileDrop" data-bs-toggle="dropdown">
                         ЛИЧНЫЙ КАБИНЕТ
@@ -44,12 +69,10 @@
                             <li><a class="dropdown-item" th:href="@{/support/orders}">Модерация товаров</a></li>
                             <li><a class="dropdown-item" th:href="@{/support/questions}">Модерация вопросов</a></li>
                         </div>
+                        <li><a class="dropdown-item" th:href="@{/settings}">⚙ Настройки профиля</a></li>
                         <li>
-                            <a class="dropdown-item" th:href="@{/settings}">
-                                ⚙ Настройки профиля
-                            </a>
+                            <hr class="dropdown-divider">
                         </li>
-                        <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
                     </ul>
                 </li>
@@ -58,146 +81,207 @@
     </div>
 </nav>
 
-
-
-
-
-
-
-
-
-<!-- Форма фильтрации по категориям -->
-<!-- Форма фильтрации -->
 <div class="container mb-4 mt-3">
     <form action="/list" method="get" class="row g-3 align-items-end">
-
-        <!-- Категория -->
         <div class="col-md-3">
             <label for="category" class="form-label fw-bold">Категория:</label>
             <select name="categoryId" id="category" class="form-select">
                 <option value="">Все категории</option>
-                <option th:each="cat : ${categories}"
-                        th:value="${cat.id}"
-                        th:text="${cat.name}"
-                        th:selected="${cat.id == selectedCategoryId}">
-                </option>
+                <option th:each="cat : ${categories}" th:value="${cat.id}"
+                        th:text="${cat.name}" th:selected="${cat.id == selectedCategoryId}"></option>
             </select>
         </div>
-
-        <!-- Поиск -->
         <div class="col-md-3">
             <label class="form-label fw-bold">Поиск:</label>
-            <input type="text" name="search" th:value="${search}" class="form-control" placeholder="Название...">
+            <input type="text" name="search" th:value="${search}"
+                   class="form-control" placeholder="Название...">
         </div>
-
-        <!-- Галочка для продавца (Видна только SELLER) -->
         <div class="col-md-3" sec:authorize="hasRole('SELLER')">
             <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" name="onlyMine" id="onlyMine" th:checked="${onlyMine}">
-                <label class="form-check-label fw-bold" for="onlyMine">
-                    Только мои товары
-                </label>
+                <input class="form-check-input" type="checkbox" name="onlyMine"
+                       id="onlyMine" th:checked="${onlyMine}">
+                <label class="form-check-label fw-bold" for="onlyMine">Только мои товары</label>
             </div>
         </div>
-
-        <!-- Кнопка -->
         <div class="col-md-2">
             <button type="submit" class="btn btn-primary w-100">Применить</button>
         </div>
     </form>
 </div>
 
-
 <div class="container py-5">
     <div class="row mb-4 align-items-center">
         <div class="col-md-8">
             <h1 class="display-5 fw-bold">Витрина товаров</h1>
             <p class="lead text-muted" sec:authorize="isAnonymous()">Войдите, чтобы совершать покупки</p>
-            <p class="lead text-success" sec:authorize="hasRole('SELLER')">Ваши товары проходят модерацию перед появлением здесь</p>
-            <p class="lead text-danger" sec:authorize="hasRole('SUPPORT')">Режим модератора: просмотр активных товаров</p>
+            <p class="lead text-success" sec:authorize="hasRole('SELLER')">Ваши товары проходят модерацию</p>
+            <p class="lead text-danger" sec:authorize="hasRole('SUPPORT')">Режим модератора</p>
         </div>
     </div>
 
+    <!-- Сообщения об ошибках -->
+    <div class="row" th:if="${param.error != null}">
+        <div class="col-12">
+            <div th:if="${param.error[0] == 'no_money'}"
+                 class="alert alert-danger alert-dismissible fade show shadow-sm">
+                <strong>Ошибка!</strong> Недостаточно средств на балансе.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${param.error[0] == 'no_stock'}"
+                 class="alert alert-warning alert-dismissible fade show shadow-sm">
+                <strong>Упс!</strong> Товар уже раскупили.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Сообщения об успехе -->
+    <div class="row" th:if="${param.success != null}">
+        <div class="col-12">
+            <div th:if="${param.success[0] == 'created'}"
+                 class="alert alert-success alert-dismissible fade show shadow-sm">
+                <strong>Успешно!</strong> Отзыв добавлен.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Список товаров -->
     <div class="row row-cols-1 row-cols-md-3 g-4" th:if="${not #lists.isEmpty(goods)}">
         <div class="col" th:each="good : ${goods}">
-            <div class="card h-100 shadow-sm border-0">
+            <div class="card h-100 shadow-sm border-0 position-relative">
 
-                <img th:src="${good.imagePath != null ? '/uploads/' + good.imagePath : 'https://via.placeholder.com/300x200'}"
-                     class="card-img-top" alt="Товар">
+                <!-- 🔥 Статус товара: сравнение через .name() -->
+                <span th:if="${good.moderationStatus != null && good.moderationStatus.name() == 'PENDING'}"
+                      class="badge bg-warning text-dark position-absolute top-0 end-0 m-2">
+                    ⏳ На модерации
+                </span>
+
+                <!-- Изображение товара (ссылка на детальную страницу) -->
+                <a th:href="@{/reviews/goods/{id}(id=${good.id})}" class="product-link">
+                    <img th:src="${good.imagePath != null ? '/uploads/' + good.imagePath : 'https://via.placeholder.com/300x200'}"
+                         class="card-img-top" alt="Товар">
+                </a>
 
                 <div class="card-body">
+                    <!-- Название и цена -->
                     <div class="d-flex justify-content-between align-items-start">
-                        <h5 class="card-title fw-bold" th:text="${good.name}">Название</h5>
-                        <span class="badge bg-success" th:text="${good.price} + ' ₽'">0 ₽</span>
+                        <h5 class="card-title fw-bold mb-0">
+                            <a th:href="@{/reviews/goods/{id}(id=${good.id})}"
+                               class="product-link"
+                               th:text="${good.name}">Название товара</a>
+                        </h5>
+                        <span class="badge bg-success fs-6" th:text="${good.price} + ' ₽'">0 ₽</span>
                     </div>
-                    <p class="card-text text-truncate" th:text="${good.description}">Описание</p>
 
-                    <div class="mt-3">
+                    <!-- 🔥 Рейтинг товара (звёзды + число + количество отзывов) -->
+                    <div class="my-2">
+                        <div class="star-rating">
+    <span th:each="i : ${#numbers.sequence(1,5)}">
+        <i th:class="${i <= (good.averageRating ?: 0)
+            ? 'bi bi-star-fill text-warning'
+            : 'bi bi-star text-muted'}"></i>
+    </span>
+                        </div>
+                        <small class="text-muted">
+                            <span th:text="${good.averageRating != null ? #numbers.formatDecimal(good.averageRating, 1, 1) : '0.0'}">0.0</span>
+                            (<span th:text="${good.reviewCount != null ? good.reviewCount : 0}">0</span> отзывов)
+                        </small>
+                    </div>
+
+                    <!-- Описание -->
+                    <p class="card-text text-truncate text-muted" th:text="${good.description}">
+                        Краткое описание товара...
+                    </p>
+
+                    <!-- Информация о продавце и наличии -->
+                    <div class="mt-3 pt-2 border-top">
                         <small class="text-muted d-block">
-                            Продавец: <span class="fw-bold" th:text="${good.getSellerName()}">ФИО</span>
+                            🛒 Продавец: <span class="fw-bold text-dark" th:text="${good.sellerName}">ФИО</span>
                         </small>
                         <small class="text-muted">
-                            В наличии: <span th:text="${good.quantity}">0</span> шт.
+                            📦 В наличии:
+                            <span th:class="${good.quantity > 0} ? 'text-success fw-bold' : 'text-danger fw-bold'"
+                                  th:text="${good.quantity} + ' шт.'">0 шт.</span>
                         </small>
                     </div>
                 </div>
 
                 <div class="card-footer bg-white border-top-0 pb-3">
                     <div class="d-grid gap-2">
-                        <a sec:authorize="isAnonymous()" th:href="@{/login}" class="btn btn-outline-primary">Войти для покупки</a>
 
-                        <form sec:authorize="hasRole('CONSUMER')"
-                              th:action="@{/cart/add}"
-                              method="post"
-                              class="d-flex">
+                        <!-- Для неавторизованных -->
+                        <a sec:authorize="isAnonymous()"
+                           th:href="@{/login}"
+                           class="btn btn-outline-primary btn-sm">
+                            🔐 Войти для покупки
+                        </a>
 
-                            <input type="hidden"
-                                   name="goodsId"
-                                   th:value="${good.id}">
+                        <!-- Для покупателей (CONSUMER) -->
+                        <div sec:authorize="hasRole('CONSUMER')">
+                            <!-- В корзину -->
+                            <form th:action="@{/cart/add}" method="post" class="d-flex mb-2">
+                                <input type="hidden" name="goodsId" th:value="${good.id}">
+                                <input type="number" name="quantity" value="1" min="1"
+                                       class="form-control form-control-sm me-2" style="width:70px"
+                                       th:max="${good.quantity}">
+                                <button class="btn btn-primary btn-sm w-100"
+                                        th:disabled="${good.quantity <= 0}">
+                                    <span th:text="${good.quantity > 0 ? '🛒 В корзину' : '❌ Нет в наличии'}"></span>
+                                </button>
+                            </form>
 
-                            <input type="number"
-                                   name="quantity"
-                                   value="1"
-                                   min="1"
-                                   class="form-control form-control-sm me-2"
-                                   style="width:80px">
+                            <!-- Купить сейчас -->
+                            <form th:action="@{/order/buy-now}" method="post">
+                                <input type="hidden" name="goodsId" th:value="${good.id}">
+                                <button type="submit" class="btn btn-success btn-sm w-100 shadow-sm"
+                                        th:disabled="${good.quantity <= 0}"
+                                        onclick="return confirm('Вы уверены, что хотите купить этот товар сейчас?')">
+                                    ⚡ Купить сейчас
+                                </button>
+                            </form>
 
-                            <button class="btn btn-primary btn-sm"
-                                    th:disabled="${good.quantity <= 0}">
+                            <!-- 🔥 Кнопка просмотра отзывов -->
+                            <a th:href="@{/reviews/goods/{id}(id=${good.id})}"
+                               class="btn btn-outline-secondary btn-sm review-btn mt-2">
+                                💬 Отзывы (<span th:text="${good.reviewCount != null ? good.reviewCount : 0}">0</span>)
+                            </a>
+                        </div>
 
-                                <span th:text="${good.quantity > 0 ? 'В корзину' : 'Нет в наличии'}"></span>
-
-                            </button>
-
-                        </form>
-                            <input type="hidden" name="goodsId" th:value="${good.getId()}">
-                            <button type="submit" class="btn btn-primary w-100" th:disabled="${good.getQuantity() <= 0}">
-                                <span th:text="${good.getQuantity() > 0 ? 'В корзину' : 'Нет в наличии'}"></span>
-                            </button>
-                        </form>
-
+                        <!-- Для продавцов (SELLER) -->
                         <div sec:authorize="hasRole('SELLER')">
                             <a th:if="${good.sellerEmail == #authentication.name}"
                                th:href="@{/seller/goods/edit/{id}(id=${good.id})}"
-                               class="btn btn-warning btn-sm w-100">Редактировать мой товар</a>
+                               class="btn btn-warning btn-sm w-100">✏️ Редактировать</a>
                             <span th:unless="${good.sellerEmail == #authentication.name}"
-                                  class="text-muted small d-block text-center">Просмотр (режим продавца)</span>
+                                  class="text-muted small d-block text-center">👁️ Просмотр</span>
+                            <!-- Кнопка отзывов для продавца -->
+                            <a th:href="@{/reviews/goods/{id}(id=${good.id})}"
+                               class="btn btn-outline-secondary btn-sm review-btn mt-2">
+                                💬 Отзывы (<span th:text="${good.reviewCount != null ? good.reviewCount : 0}">0</span>)
+                            </a>
                         </div>
 
-
-
+                        <!-- Для модераторов (SUPPORT) -->
                         <div sec:authorize="hasRole('SUPPORT')" class="btn-group">
-                            <a th:href="@{/support/orders}" class="btn btn-info btn-sm text-white">Управление</a>
+                            <a th:href="@{/support/orders}"
+                               class="btn btn-info btn-sm text-white w-100">⚙️ Управление</a>
                         </div>
+
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="alert alert-warning text-center" th:if="${#lists.isEmpty(goods)}">
-        <h3>Товары пока не прошли модерацию</h3>
-        <p>Загляните позже!</p>
+    <!-- Если товаров нет -->
+    <div class="alert alert-warning text-center mt-5" th:if="${#lists.isEmpty(goods)}">
+        <h3>🔍 Товары не найдены</h3>
+        <p th:if="${param.search != null}">По запросу "<strong th:text="${param.search}"></strong>" ничего не найдено.
+        </p>
+        <p th:unless="${param.search != null}">Товары пока не прошли модерацию или отсутствуют в выбранной
+            категории.</p>
+        <a th:href="@{/list}" class="btn btn-outline-secondary">Сбросить фильтры</a>
     </div>
 </div>
 
