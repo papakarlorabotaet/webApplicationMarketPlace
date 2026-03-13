@@ -1,99 +1,49 @@
 <!DOCTYPE html>
-<html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Мои товары | Продавец</title>
+    <title>Мои товары | Маркетплейс</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .profile-name {
-            font-size: 2rem;
-            font-weight: 700;
-            line-height: 1.2;
-        }
+        .card-img-top { height: 200px; object-fit: cover; }
+        .badge-StatusGoods { position: absolute; top: 10px; right: 10px; }
+        .profile-name { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+        .balance-number { font-size: 3rem; font-weight: 500; line-height: 1; }
 
-        .nav-links-horizontal {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem 1rem;
-            list-style: none;
-            padding: 0;
-            margin: 1rem 0 0;
-        }
-
-        .nav-links-horizontal .separator {
-            color: #6c757d;
-        }
-
-        .card-header {
-            font-weight: bold;
-        }
-
-        /* Стили как на главной странице */
-        .card-img-top {
-            height: 200px;
-            object-fit: cover;
-        }
-
-        .badge-status {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
-        }
+        /* Статусы модерации */
+        .status-pending { background-color: #ffc107; color: #000; }
+        .status-approved { background-color: #198754; color: #fff; }
+        .status-rejected { background-color: #dc3545; color: #fff; }
     </style>
 </head>
 <body class="bg-light">
 
-<!-- Navigation (same as profileSeller) -->
-
-
+<!-- NAVBAR (единый стиль) -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
     <div class="container-fluid">
         <a class="navbar-brand fw-bold" th:href="@{/}">MARKETPLACE</a>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/messages">СООБЩЕНИЯ<span class="badge bg-secondary"
-                                                                        th:text="${unreadMessagesCount} ?: 0">0</span>
+                <li class="nav-item"><a class="nav-link" th:href="@{/list}">КАТАЛОГ</a></li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" href="/messages">СООБЩЕНИЯ
+                        <span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
                     </a>
                 </li>
-
-                <li class="nav-item" sec:authorize="isAnonymous()">
-                    <a class="nav-link btn btn-outline-light btn-sm ms-lg-2" th:href="@{/login}">ВОЙТИ</a>
-                </li>
-
-                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
-                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА <span class="badge bg-primary"
-                                                                         th:text="${cartItemsCount}">0</span></a>
-                </li>
-
                 <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
                     <a class="nav-link dropdown-toggle" href="#" id="profileDrop" data-bs-toggle="dropdown">
                         ЛИЧНЫЙ КАБИНЕТ
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <div sec:authorize="hasRole('CONSUMER')">
-                            <li><a class="dropdown-item" th:href="@{/consumer/profile}">Мой профиль</a></li>
-                            <li><a class="dropdown-item" th:href="@{/consumer/orders}">Мои заказы</a></li>
-                        </div>
                         <div sec:authorize="hasRole('SELLER')">
                             <li><a class="dropdown-item" th:href="@{/seller/profile}">Панель продавца</a></li>
                             <li><a class="dropdown-item" th:href="@{/seller/my-goods}">Мои товары</a></li>
+                            <li><a class="dropdown-item" th:href="@{/seller/orders}">Заказы</a></li>
                         </div>
-                        <div sec:authorize="hasRole('SUPPORT')">
-                            <li><a class="dropdown-item" th:href="@{/support/profile}">Админ-панель</a></li>
-                            <li><a class="dropdown-item" th:href="@{/support/orders}">Модерация товаров</a></li>
-                            <li><a class="dropdown-item" th:href="@{/support/questions}">Модерация вопросов</a></li>
-                        </div>
-                        <li>
-                            <a class="dropdown-item" th:href="@{/settings}">
-                                ⚙ Настройки профиля
-                            </a>
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
+                        <li><a class="dropdown-item" th:href="@{/settings}">⚙ Настройки</a></li>
+                        <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
                     </ul>
                 </li>
@@ -102,203 +52,178 @@
     </div>
 </nav>
 
-
 <main class="container mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/seller/profile}" class="text-decoration-none">Панель продавца</a></li>
+            <li class="breadcrumb-item active">Мои товары</li>
+        </ol>
+    </nav>
+
+    <!-- Сообщения об успехе/ошибке -->
+    <div class="row" th:if="${param.success != null}">
+        <div class="col-12">
+            <div class="alert alert-success alert-dismissible fade show">
+                <strong>Успешно!</strong> <span th:text="${param.success}">Товар сохранён</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4">
-        <!-- Left column: profile info and horizontal links -->
-        <div class="col-md-8">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-3">
-                        <!-- Если есть аватарка продавца -->
-                        <img th:if="${user.avatarPath != null}"
-                             th:src="@{'/uploads/' + ${user.avatarPath}}"
-                             class="rounded-circle me-3"
-                             width="60" height="60" alt="Аватар">
-                        <img th:unless="${user.avatarPath != null}"
-                             src="https://via.placeholder.com/60"
-                             class="rounded-circle me-3" alt="Аватар">
-                        <div>
-                            <div class="profile-name" th:text="${user.name} + ' ' + ${user.surname}">Иван Иванов</div>
-                            <div class="text-muted">
-                                Регистрация: <span th:text="${#temporals.format(user.registrationDate, 'dd.MM.yyyy')}">17.05.2025</span>
-                                |
-                                Город: <span th:text="${user.city}">Москва</span> 🏙️
-                            </div>
-                        </div>
-                    </div>
-                    <hr>
-                    <ul class="nav-links-horizontal">
-                        <li><a href="/seller/my-goods" class="text-decoration-none fw-bold">Мои товары</a></li>
-                        <li class="separator">|</li>
-                        <li><a href="#" class="text-decoration-none">Безопасность</a></li>
-                        <li class="separator">|</li>
-                        <li><a href="#" class="text-decoration-none">Отзывы о магазине</a></li>
-                        <li class="separator">|</li>
-                        <li><a href="#" class="text-decoration-none">Логи</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right column: balance and password (optional, you can reuse from profile) -->
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white fw-bold">Ваша выручка</div>
-                <div class="card-body text-end">
-                    <div class="balance-number text-primary" th:text="${user.accountBalance}">0</div>
-                    <div class="text-muted mt-2">доступно к выводу (₽)</div>
-                </div>
-            </div>
+        <!-- Левая колонка - Список товаров -->
+        <div class="col-md-9">
             <div class="card shadow-sm">
-                <div class="card-header bg-white fw-bold">Настройки доступа</div>
-                <div class="card-body">
-                    <p class="text-muted small">Регулярная смена пароля повышает безопасность вашего магазина.</p>
-                    <a href="/change-password" class="btn btn-outline-warning w-100">Сменить пароль</a>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-            <h5 class="mb-0">Мои товары на витрине</h5>
-            <div>
-                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">+
-                    Добавить товар
-                </button>
-                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importModal">
-                    Импорт
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Сетка товаров -->
-    <div th:if="${not #lists.isEmpty(myGoods)}" class="row row-cols-1 row-cols-md-3 g-4">
-        <div class="col" th:each="item : ${myGoods}">
-            <div class="card h-100 shadow-sm border-0">
-
-                <!-- Изображение и Статус -->
-                <div class="position-relative">
-                    <img th:src="${item.imagePath != null ? '/uploads/' + item.imagePath : 'https://via.placeholder.com/300x200'}"
-                         class="card-img-top" alt="Товар">
-
-
-                    <span th:if="${item.moderationStatus != null}"
-                          th:classappend="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).PENDING} ? 'bg-warning text-dark' :
-                                        (${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).APPROVED} ? 'bg-success' : 'bg-danger')"
-                          class="badge badge-status rounded-pill shadow-sm">
-                    <span th:if="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).PENDING}">⏳ Модерация</span>
-                    <span th:if="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).APPROVED}">✅ Одобрен</span>
-                    <span th:if="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).REJECTED}">❌ Отклонен</span>
-                </span>
-                </div>
-
-                <!-- Тело карточки (как на главной) -->
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <h5 class="card-title fw-bold" th:text="${item.name}">Название товара</h5>
-                        <span class="badge bg-primary" th:text="${item.price} + ' ₽'">0 ₽</span>
-                    </div>
-                    <p class="card-text text-truncate text-muted" th:text="${item.description}">Описание товара...</p>
-
-                    <!-- Инфо о наличии (если есть поле quantity) -->
-                    <div class="mt-2">
-                        <small class="text-muted">
-                            В наличии: <span class="fw-bold" th:text="${item.quantity} ?: 0">0</span> шт.
-                        </small>
-                    </div>
-                </div>
-
-                <!-- Подвал карточки (адаптирован под продавца) -->
-                <div class="card-footer bg-white border-top-0 pb-3">
-                    <div class="d-grid gap-2">
-                        <!-- Кнопка Редактировать (только если товар одобрен или на модерации) -->
-                        <a th:href="@{/seller/goods/edit/{id}(id=${item.id})}"
-                           class="btn btn-outline-primary btn-sm"
-                           th:classappend="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).REJECTED} ? 'btn-warning' : ''"
-                           th:text="${item.moderationStatus == T(ru.urfu.entity.GoodsStatus).REJECTED} ? '✎ Исправить и отправить' : '✎ Редактировать'">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">📦 Мои товары</h5>
+                    <div class="d-flex gap-2">
+                        <!-- ✅ Массовая загрузка (требование 1.4.2) -->
+                        <a th:href="@{/seller/import}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-upload"></i> Импорт CSV
                         </a>
-
-                        <!-- Кнопка Статистика -->
-                        <a th:href="@{/seller/goods/{id}/stats(id=${item.id})}"
-                           class="btn btn-outline-secondary btn-sm">📊 Статистика</a>
+                        <a th:href="@{/seller/goods/add}" class="btn btn-success btn-sm">
+                            <i class="bi bi-plus-lg"></i> Добавить товар
+                        </a>
                     </div>
                 </div>
+                <div class="card-body">
+                    <!-- Фильтры -->
+                    <form th:action="@{/seller/my-goods}" method="get" class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <select name="status" class="form-select">
+                                <option value="">Все статусы</option>
+                                <option value="PENDING" th:selected="${param.status == 'PENDING'}">⏳ На модерации</option>
+                                <option value="APPROVED" th:selected="${param.status == 'APPROVED'}">✅ Одобрено</option>
+                                <option value="REJECTED" th:selected="${param.status == 'REJECTED'}">❌ Отклонено</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" name="search" th:value="${param.search}"
+                                   class="form-control" placeholder="Поиск по названию...">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">Применить</button>
+                        </div>
+                    </form>
 
+                    <!-- Таблица товаров -->
+                    <div th:if="${not #lists.isEmpty(goods)}" class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Фото</th>
+                                <th>Название</th>
+                                <th>Цена</th>
+                                <th>Остаток</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="good : ${goods}">
+                                <td>
+                                    <img th:src="${good.imagePath != null ? '/uploads/' + good.imagePath : 'https://via.placeholder.com/60x60'}"
+                                         class="rounded" style="width: 60px; height: 60px; object-fit: cover;" alt="Товар">
+                                </td>
+                                <td>
+                                    <a th:href="@{/reviews/goods/{id}(id=${good.id})}"
+                                       class="text-decoration-none fw-bold"
+                                       th:text="${good.name}">Название товара</a>
+                                </td>
+                                <td th:text="${good.price} + ' ₽'">100 ₽</td>
+                                <td>
+                                    <span th:class="${good.quantity > 0} ? 'text-success' : 'text-danger'"
+                                          th:text="${good.quantity} + ' шт.'">0 шт.</span>
+                                </td>
+                                <td>
+                                    <span th:if="${good.moderationStatus != null}"
+                                          th:class="'badge ' +
+                                              (${good.moderationStatus.name() == 'PENDING'} ? 'status-pending' :
+                                              (${good.moderationStatus.name() == 'APPROVED'} ? 'status-approved' : 'status-rejected'))"
+                                          th:text="${good.moderationStatus.name() == 'PENDING'} ? '⏳ На модерации' :
+                                              (${good.moderationStatus.name() == 'APPROVED'} ? '✅ Одобрено' : '❌ Отклонено')">
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a th:href="@{/seller/goods/edit/{id}(id=${good.id})}"
+                                           class="btn btn-outline-warning" title="Редактировать">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger"
+                                                th:onclick="'deleteGood(' + ${good.id} + ')'" title="Удалить">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Если товаров нет -->
+                    <div th:if="${#lists.isEmpty(goods)}" class="text-center py-5">
+                        <i class="bi bi-box-seam display-4 text-muted"></i>
+                        <h5 class="mt-3 text-muted">Товары ещё не добавлены</h5>
+                        <p class="text-muted">Добавьте первый товар или загрузите через CSV</p>
+                        <a th:href="@{/seller/goods/add}" class="btn btn-success">
+                            <i class="bi bi-plus-lg"></i> Добавить товар
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div th:if="${#lists.isEmpty(myGoods)}" class="alert alert-light text-center border py-5">
-        <h5>У вас пока нет товаров</h5>
-        <p class="text-muted mb-3">Добавьте первый товар, чтобы он появился на витрине</p>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">Добавить товар</button>
-    </div>
-    </div>
+
+        <!-- Правая колонка - Статистика -->
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-white fw-bold">📊 Статистика</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Всего товаров</small>
+                        <div class="h4 mb-0" th:text="${totalGoods}">0</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">На модерации</small>
+                        <div class="h4 mb-0 text-warning" th:text="${pendingGoods}">0</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Одобрено</small>
+                        <div class="h4 mb-0 text-success" th:text="${approvedGoods}">0</div>
+                    </div>
+                    <div>
+                        <small class="text-muted">Отклонено</small>
+                        <div class="h4 mb-0 text-danger" th:text="${rejectedGoods}">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold">💡 Подсказка</div>
+                <div class="card-body small text-muted">
+                    <p class="mb-2">Товары проходят модерацию в течение 24 часов.</p>
+                    <p class="mb-0">Для массовой загрузки используйте формат CSV.</p>
+                </div>
+            </div>
+        </div>
     </div>
 </main>
 
-<!-- Modal: Import goods (reuses import-goods endpoint) -->
-<div class="modal fade" id="importModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" action="/seller/import-goods" enctype="multipart/form-data">
-                <div class="modal-header">
-                    <h5 class="modal-title">Импорт товаров из файла</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Выберите файл (CSV или Excel)</label>
-                        <input type="file" name="file" class="form-control" accept=".csv,.xlsx" required>
-                    </div>
-                    <p class="text-muted small">Убедитесь, что формат файла соответствует шаблону магазина.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Загрузить данные</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Add product manually -->
-<div class="modal fade" id="addProductModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form th:action="@{/seller/add-product}" method="post" enctype="multipart/form-data">
-                <div class="modal-header">
-                    <h5 class="modal-title">Добавить товар вручную</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Название товара</label>
-                        <input type="text" name="name" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Описание</label>
-                        <textarea name="description" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Цена (₽)</label>
-                        <input type="number" step="0.01" name="price" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Фото (max 10 МБ)</label>
-                        <input type="file" name="image" accept="image/*" class="form-control">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-success">Сохранить товар</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<!-- Форма удаления (скрытая) -->
+<form id="deleteForm" method="post" style="display: none;">
+    <input type="hidden" name="_method" value="delete">
+</form>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function deleteGood(id) {
+        if (confirm('Вы уверены, что хотите удалить этот товар?')) {
+            const form = document.getElementById('deleteForm');
+            form.action = '/seller/goods/delete/' + id;
+            form.submit();
+        }
+    }
+</script>
 </body>
 </html>

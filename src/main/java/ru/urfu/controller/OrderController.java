@@ -86,7 +86,7 @@ public class OrderController {
         userRepository.save(seller);
         goodsRepository.save(good);
 
-        return "redirect:/receipt/" + order.getId();
+        return "redirect:/order/receipt/" + order.getId();
     }
 
     @GetMapping("/receipt/{id}")

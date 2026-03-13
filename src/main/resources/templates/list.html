@@ -51,6 +51,16 @@
                         <span class="badge bg-primary" th:text="${cartItemsCount}">0</span>
                     </a>
                 </li>
+                <!-- Баланс -->
+                <!-- ✅ Безопасный доступ через GlobalControllerAdvice -->
+                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
+                    <a class="nav-link" href="/consumer/payments">БАЛАНС
+                        <span class="badge bg-secondary"
+                              th:text="${balance}">0</span>
+                    </a>
+                </li>
+
+
                 <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
                     <a class="nav-link dropdown-toggle" href="#" id="profileDrop" data-bs-toggle="dropdown">
                         ЛИЧНЫЙ КАБИНЕТ
@@ -232,11 +242,9 @@
                             </form>
 
                             <!-- Купить сейчас -->
-                            <form th:action="@{/order/buy-now}" method="post">
+                            <form th:action="@{/templates/order/buy-now}" method="post">
                                 <input type="hidden" name="goodsId" th:value="${good.id}">
-                                <button type="submit" class="btn btn-success btn-sm w-100 shadow-sm"
-                                        th:disabled="${good.quantity <= 0}"
-                                        onclick="return confirm('Вы уверены, что хотите купить этот товар сейчас?')">
+                                <button type="submit" class="btn btn-success btn-sm w-100">
                                     ⚡ Купить сейчас
                                 </button>
                             </form>
@@ -262,10 +270,13 @@
                             </a>
                         </div>
 
-                        <!-- Для модераторов (SUPPORT) -->
-                        <div sec:authorize="hasRole('SUPPORT')" class="btn-group">
-                            <a th:href="@{/support/orders}"
-                               class="btn btn-info btn-sm text-white w-100">⚙️ Управление</a>
+                        <!-- 🔥 Для модераторов (SUPPORT) - ИСПРАВЛЕНО -->
+                        <div sec:authorize="hasRole('SUPPORT')">
+                            <a th:href="@{/reviews/goods/{id}(id=${good.id})}"
+                               class="btn btn-outline-primary btn-sm w-100"
+                               title="Просмотр товара">
+                                ⚙️
+                            </a>
                         </div>
 
                     </div>
