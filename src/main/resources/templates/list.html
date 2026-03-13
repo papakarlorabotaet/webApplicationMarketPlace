@@ -184,6 +184,8 @@
                                   class="text-muted small d-block text-center">Просмотр (режим продавца)</span>
                         </div>
 
+
+
                         <div sec:authorize="hasRole('SUPPORT')" class="btn-group">
                             <a th:href="@{/support/orders}" class="btn btn-info btn-sm text-white">Управление</a>
                         </div>
