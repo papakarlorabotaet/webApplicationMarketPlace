@@ -1,5 +1,6 @@
 package ru.urfu.service;
 
+import ru.urfu.entity.Goods;
 import ru.urfu.entity.GoodsQuestion;
 import ru.urfu.entity.GoodsQuestionStatus;
 
@@ -10,4 +11,6 @@ public interface GoodsQuestionService {
     void updateStatus(Long questionId, GoodsQuestionStatus status);
     void saveQuestion(GoodsQuestion question);
     GoodsQuestion findById(Long questionId);
+    List<GoodsQuestion> findAllByGoods(Goods goods);
+    List<GoodsQuestion> findByGoods(Goods goods);
 }

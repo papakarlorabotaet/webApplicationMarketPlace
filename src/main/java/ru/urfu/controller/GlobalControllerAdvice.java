@@ -11,6 +11,8 @@ import ru.urfu.repository.MessageRepository;
 import ru.urfu.repository.UserRepository;
 import ru.urfu.service.CartService;
 
+import java.math.BigDecimal;
+
 @ControllerAdvice
 public class GlobalControllerAdvice {
 
@@ -41,6 +43,9 @@ public class GlobalControllerAdvice {
                 int cartCount = cartService.getCartByUser(user).getItems().size();
                 model.addAttribute("cartItemsCount", cartCount);
 
+                BigDecimal bigDecimalBalance = user.getAccountBalance();
+                model.addAttribute("balance", bigDecimalBalance);
+
                 // Можно также прокинуть самого юзера, если он нужен везде
                 model.addAttribute("currentUser", user);
             }
@@ -48,6 +53,8 @@ public class GlobalControllerAdvice {
             // Значения для анонимных пользователей
             model.addAttribute("unreadMessagesCount", 0);
             model.addAttribute("cartItemsCount", 0);
+            model.addAttribute("balance", 0);
+
         }
     }
 }

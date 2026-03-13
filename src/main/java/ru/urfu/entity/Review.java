@@ -23,7 +23,7 @@ public class Review {
     @Column(nullable = false)
     private int rating; // Оценка от 1 до 5
 
-    @Column(length = 1000)
+    @Column(length = 2000)
     private String comment;
 
     @Column(name = "image_path")

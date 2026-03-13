@@ -35,10 +35,10 @@ public class Goods {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @Column(name = "name")
+    @Column(name = "name", length = 500)
     private String name;
 
-    @Column(name = "description")
+    @Column(name = "description", length = 2000)
     private String description;
 
     @Column(name = "price") //Цена товара

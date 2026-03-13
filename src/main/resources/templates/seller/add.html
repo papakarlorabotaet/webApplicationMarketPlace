@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить товар | Маркетплейс</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .profile-name { font-size: 2rem; font-weight: 700; }
+        .balance-number { font-size: 3rem; font-weight: 500; }
+        .form-label { font-weight: 500; }
+        .required::after { content: " *"; color: #dc3545; }
+    </style>
+</head>
+<body class="bg-light">
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}">MARKETPLACE</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/list}">КАТАЛОГ</a></li>
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">ЛИЧНЫЙ КАБИНЕТ</a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" th:href="@{/seller/profile}">Панель продавца</a></li>
+                        <li><a class="dropdown-item" th:href="@{/seller/my-goods}">Мои товары</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main class="container mt-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/seller/profile}" class="text-decoration-none">Панель продавца</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/seller/my-goods}" class="text-decoration-none">Мои товары</a></li>
+            <li class="breadcrumb-item active">Добавить товар</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">📦 Новый товар</h5>
+                </div>
+                <div class="card-body">
+                    <!-- ✅ CSRF токен автоматически добавляется через th:action -->
+                    <form th:action="@{/seller/goods/add}" method="post" enctype="multipart/form-data">
+
+                        <div class="row g-3">
+                            <!-- Название -->
+                            <div class="col-12">
+                                <label class="form-label required">Название товара</label>
+                                <input type="text" name="name" class="form-control" required
+                                       placeholder="Например: Беспроводные наушники XYZ">
+                            </div>
+
+                            <!-- Категория -->
+                            <div class="col-md-6">
+                                <label class="form-label required">Категория</label>
+                                <select name="categoryId" class="form-select" required>
+                                    <option value="">Выберите категорию</option>
+                                    <option th:each="cat : ${categories}"
+                                            th:value="${cat.id}"
+                                            th:text="${cat.name}">Категория</option>
+                                </select>
+                            </div>
+
+                            <!-- Цена -->
+                            <div class="col-md-6">
+                                <label class="form-label required">Цена (₽)</label>
+                                <input type="number" name="price" class="form-control" required
+                                       min="1" step="0.01" placeholder="0.00">
+                            </div>
+
+                            <!-- Количество -->
+                            <div class="col-md-6">
+                                <label class="form-label required">Количество на складе</label>
+                                <input type="number" name="quantity" class="form-control" required
+                                       min="0" placeholder="0">
+                            </div>
+
+                            <!-- Артикул -->
+                            <div class="col-md-6">
+                                <label class="form-label">Артикул (SKU)</label>
+                                <input type="text" name="sku" class="form-control"
+                                       placeholder="ART-12345">
+                            </div>
+
+                            <!-- Описание -->
+                            <div class="col-12">
+                                <label class="form-label required">Описание</label>
+                                <textarea name="description" class="form-control" rows="5" required
+                                          placeholder="Подробное описание товара, характеристики, преимущества..."></textarea>
+                            </div>
+
+                            <!-- Фото -->
+                            <div class="col-12">
+                                <label class="form-label">Фото товара</label>
+                                <input type="file" name="image" class="form-control" accept="image/*">
+                                <div class="form-text">Поддерживаемые форматы: JPG, PNG, WEBP (макс. 5MB)</div>
+                            </div>
+
+                            <!-- Кнопки -->
+                            <div class="col-12 mt-4">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-check-lg"></i> Сохранить товар
+                                </button>
+                                <a th:href="@{/seller/my-goods}" class="btn btn-outline-secondary btn-lg">
+                                    <i class="bi bi-x-lg"></i> Отмена
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Подсказка по требованиям диплома -->
+            <div class="alert alert-info mt-4">
+                <i class="bi bi-info-circle"></i>
+                <strong>Требование 1.4.2:</strong> Товар будет отправлен на модерацию.
+                Время проверки — до 24 часов. После одобрения товар появится в каталоге.
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

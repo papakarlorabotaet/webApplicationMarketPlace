@@ -2,6 +2,7 @@ package ru.urfu.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.urfu.entity.Goods;
 import ru.urfu.entity.GoodsQuestion;
 import ru.urfu.entity.GoodsQuestionStatus;
 
@@ -42,5 +43,15 @@ public class GoodsQuestionServiceImpl implements GoodsQuestionService {
     @Override
     public GoodsQuestion findById(Long questionId) {
         return goodsQuestionRepository.findById(questionId).orElse(null);
+    }
+
+    @Override
+    public List<GoodsQuestion> findAllByGoods(Goods goods) {
+        return goodsQuestionRepository.findByGoods(goods);
+    }
+
+    @Override
+    public List<GoodsQuestion> findByGoods(Goods goods) {
+        return goodsQuestionRepository.findByGoodsOrderByCreatedAtDesc(goods);
     }
 }

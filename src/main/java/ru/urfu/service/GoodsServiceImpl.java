@@ -10,15 +10,18 @@ import ru.urfu.entity.Message;
 import ru.urfu.entity.User;
 import ru.urfu.repository.GoodsRepository;
 import ru.urfu.repository.MessageRepository;
-import ru.urfu.repository.ReviewRepository; // 🔥 Добавляем
+import ru.urfu.repository.ReviewRepository;
 import ru.urfu.repository.UserRepository;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.nio.charset.StandardCharsets;
 
 @Service
 @Transactional
@@ -186,38 +189,56 @@ public class GoodsServiceImpl implements GoodsService {
         User seller = userRepository.findByEmail(email);
         List<Goods> goodsList = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
             String line;
             boolean isFirstLine = true;
+            int importedCount = 0;
+
             while ((line = reader.readLine()) != null) {
+                // Пропускаем заголовок
                 if (isFirstLine) {
                     isFirstLine = false;
                     continue;
                 }
 
-                String[] parts = line.split(",");
-                if (parts.length < 3 || parts[0].isBlank()) continue;
-
-                Goods goods = new Goods();
-                goods.setName(parts[0].trim());
-                goods.setDescription(parts[1].trim());
-                try {
-                    BigDecimal price = new BigDecimal(parts[2].trim());
-                    goods.setPrice(price);
-                } catch (NumberFormatException e) {
-                    throw new RuntimeException("Неверный формат цены в строке: " + line);
+                // Пропускаем пустые строки
+                if (line.trim().isEmpty()) {
+                    continue;
                 }
-                goods.setUser(seller);
-                goods.setModerationStatus(GoodsStatus.PENDING);
-                goods.setDeliveryStatus(0);
-                goods.setAverageRating(0.0);
-                goods.setReviewCount(0L);
 
-                goodsList.add(goods);
+                // Разделяем по запятой или точке с запятой
+                String[] parts = line.split("[,;]");
+
+                // ✅ УПРОЩЕНО: теперь только 4 поля
+                if (parts.length < 4) {
+                    continue; // пропускаем некорректные строки
+                }
+
+                try {
+                    Goods goods = new Goods();
+                    goods.setName(parts[0].trim());
+                    goods.setDescription(parts[1].trim());
+                    goods.setPrice(new BigDecimal(parts[2].trim()));
+                    goods.setQuantity(Long.parseLong(parts[3].trim()));
+                    goods.setUser(seller);
+                    goods.setModerationStatus(GoodsStatus.PENDING);
+
+                    goodsRepository.save(goods);
+                    importedCount++;
+
+                } catch (Exception e) {
+                    // Логируем ошибку, но продолжаем импорт
+                    System.err.println("Ошибка при импорте строки: " + line);
+                }
             }
-            goodsRepository.saveAll(goodsList);
-        } catch (Exception e) {
-            throw new RuntimeException("Ошибка парсинга CSV: " + e.getMessage());
+
+            System.out.println("Импортировано товаров: " + importedCount);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Ошибка при чтении файла: " + e.getMessage());
         }
     }
 
