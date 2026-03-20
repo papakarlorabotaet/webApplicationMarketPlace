@@ -26,7 +26,7 @@ public class ReturnGoodsController {
     @PostMapping("/return/{orderId}")
     public String returnOrder(@PathVariable Long orderId, @AuthenticationPrincipal UserDetails userDetails) {
         Order order = orderRepository.findById(orderId).orElseThrow();
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
         // Проверяем, что заказ принадлежит юзеру и статус позволяет возврат
         if (order.getBuyer().getId().equals(user.getId()) && "Доставлен".equals(order.getStatus())) {

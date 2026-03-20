@@ -39,7 +39,7 @@ public class SettingsController {
     public String settings(Model model,
                            @AuthenticationPrincipal UserDetails userDetails){
 
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
         model.addAttribute("user", user);
 
@@ -51,7 +51,7 @@ public class SettingsController {
                                @AuthenticationPrincipal UserDetails userDetails)
             throws IOException {
 
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
         String filename = UUID.randomUUID() + "_" + avatar.getOriginalFilename();
 
@@ -70,7 +70,7 @@ public class SettingsController {
     public String changeEmail(@RequestParam String email,
                               @AuthenticationPrincipal UserDetails userDetails){
 
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
         user.setEmail(email);
 
@@ -84,7 +84,7 @@ public class SettingsController {
                                  @RequestParam String newPassword,
                                  @AuthenticationPrincipal UserDetails userDetails){
 
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
         if(passwordEncoder.matches(oldPassword, user.getPassword())){
 
@@ -92,6 +92,21 @@ public class SettingsController {
 
             userRepository.save(user);
         }
+
+        return "redirect:/settings";
+    }
+
+    @PostMapping("/name")
+    public String changeName(@RequestParam String firstName,
+                             @RequestParam String lastName,
+                             @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
+
+        user.setName(firstName);
+        user.setSurname(lastName);
+
+        userRepository.save(user);
 
         return "redirect:/settings";
     }

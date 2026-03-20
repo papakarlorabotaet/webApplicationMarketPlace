@@ -146,6 +146,37 @@
                 </div>
 
             </div>
+            <!-- Name Surname (только consumer/seller) -->
+            <div sec:authorize="hasAnyRole('CONSUMER','SELLER')">
+                <div class="card shadow-sm">
+                    <div class="card-header fw-bold">
+                        Смена Имени и Фамилии
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/settings/name}" method="post">
+                            <div class="mb-3">
+                                <label class="form-label">Имя</label>
+                                <input type="text"
+                                       name="firstName"
+                                       class="form-control"
+                                       th:value="${user.name}"
+                                       required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Фамилия</label>
+                                <input type="text"
+                                       name="lastName"
+                                       class="form-control"
+                                       th:value="${user.surname}"
+                                       required>
+                            </div>
+                            <button class="btn btn-warning">
+                                Сохранить изменения
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
 
             <!-- SUPPORT сообщение -->
             <div sec:authorize="hasRole('SUPPORT')" class="alert alert-info">

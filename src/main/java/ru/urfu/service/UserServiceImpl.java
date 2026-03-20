@@ -69,7 +69,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmail(email).orElse(null);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         // Ищем нашего общего User
-        User user = userRepository.findByEmail(email);
+        User user = userRepository.findByEmail(email).orElse(null);;
 
         if (user != null) {
             // Превращаем Set<Role> в список SimpleGrantedAuthority

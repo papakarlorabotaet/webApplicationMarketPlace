@@ -39,7 +39,7 @@ public class OrderController {
     public String buyNow(@RequestParam Long goodsId,
                          @AuthenticationPrincipal UserDetails userDetails,
                          Model model) {
-        User consumer = userRepository.findByEmail(userDetails.getUsername());
+        User consumer = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         Goods good = goodsRepository.findById(goodsId).orElseThrow();
 
         // 1. Проверка наличия товара
@@ -91,7 +91,12 @@ public class OrderController {
 
     @GetMapping("/receipt/{id}")
     public String showReceipt(@PathVariable Long id, Model model) {
-        Order order = orderRepository.findById(id).orElseThrow();
+        System.out.println("showReceipt called with id: " + id);
+        Order order = orderRepository.findById(id).orElse(null);
+        if (order == null) {
+            System.out.println("Order not found, redirecting");
+            return "redirect:/list?error=order_not_found";
+        }
         model.addAttribute("order", order);
         return "order/receipt";
     }

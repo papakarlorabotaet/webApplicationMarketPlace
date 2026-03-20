@@ -50,7 +50,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public void importOrders(MultipartFile file, String sellerEmail) {
         // Получаем продавца по email
-        User seller = userRepository.findByEmail(sellerEmail);
+        User seller = userRepository.findByEmail(sellerEmail).orElse(null);
         if (seller == null) {
             throw new RuntimeException("Продавец не найден");
         }

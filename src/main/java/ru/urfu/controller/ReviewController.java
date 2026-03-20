@@ -59,7 +59,7 @@ public class ReviewController {
 
 
         if (userDetails != null) {
-            User user = userRepository.findByEmail(userDetails.getUsername());
+            User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
             for (GoodsQuestion q : allQuestions) {
                 // Показываем одобренные ИЛИ вопросы текущего пользователя
                 if (q.getStatus() == GoodsQuestionStatus.APPROVED ||
@@ -79,7 +79,7 @@ public class ReviewController {
         // Может ли пользователь оставить отзыв (купил ли товар)
         boolean canLeaveReview = false;
         if (userDetails != null) {
-            User user = userRepository.findByEmail(userDetails.getUsername());
+            User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
                canLeaveReview = orderRepository.existsByBuyerAndGoods(user, goods)
                     && !reviewService.hasReviewed(user, goods);
         }
@@ -98,7 +98,7 @@ public class ReviewController {
 
     @GetMapping("/myReviews")
     public String myReviews(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         List<Review> reviews = reviewRepository.findByAuthor(user);
         model.addAttribute("reviews", reviews);
         return "myReviews";
@@ -112,7 +112,7 @@ public class ReviewController {
                             @AuthenticationPrincipal UserDetails userDetails,
                             RedirectAttributes redirectAttributes) {
         try {
-            User user = userRepository.findByEmail(userDetails.getUsername());
+            User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
             Goods goods = goodsRepository.findById(goodsId)
                     .orElseThrow(() -> new RuntimeException("Товар не найден"));
 
@@ -143,7 +143,7 @@ public class ReviewController {
                                @AuthenticationPrincipal UserDetails userDetails,
                                RedirectAttributes redirectAttributes) {
         try {
-            User user = userRepository.findByEmail(userDetails.getUsername());
+            User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
             reviewService.deleteReview(id, user);
             redirectAttributes.addFlashAttribute("success", "Отзыв удалён");
         } catch (RuntimeException e) {
@@ -160,7 +160,7 @@ public class ReviewController {
                               @AuthenticationPrincipal UserDetails userDetails,
                               RedirectAttributes redirectAttributes) {  // ✅ Добавляем параметр
         try {
-            User author = userRepository.findByEmail(userDetails.getUsername());
+            User author = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
             Goods goods = goodsRepository.findById(goodsId).orElseThrow();
 
             GoodsQuestion question = new GoodsQuestion();

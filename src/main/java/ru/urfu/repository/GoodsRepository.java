@@ -8,6 +8,7 @@ import ru.urfu.entity.Goods;
 import ru.urfu.entity.GoodsStatus;
 import ru.urfu.entity.User;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,16 +34,18 @@ public interface GoodsRepository extends JpaRepository<Goods, Long> {
             "(:categoryId IS NULL OR g.category.id = :categoryId) AND " +
             "(LOWER(g.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(g.description) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
             "g.price >= :minPrice AND g.price <= :maxPrice AND " +
-            "g.moderationStatus = :status AND " + // Всегда проверяем статус
-            "(:sellerEmail IS NULL OR g.user.email = :sellerEmail)") // Фильтр по продавцу (если передан)
-
-    java.util.List<ru.urfu.entity.Goods> findFilteredGoods(
+            "g.moderationStatus = :status AND " +
+            "(:sellerEmail IS NULL OR g.user.email = :sellerEmail) AND " +
+            "NOT EXISTS (SELECT a FROM Auction a WHERE a.goods = g AND a.isActive = true)")
+    List<Goods> findFilteredGoods(
             @Param("categoryId") Long categoryId,
             @Param("search") String search,
-            @Param("minPrice") java.math.BigDecimal minPrice,
-            @Param("maxPrice") java.math.BigDecimal maxPrice,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
             @Param("status") GoodsStatus status,
             @Param("sellerEmail") String sellerEmail);
+
+
 
     List<Goods> findByNameContainingIgnoreCaseAndPriceBetweenAndModerationStatus(
             String name,

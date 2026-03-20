@@ -27,8 +27,9 @@
                     <h5 class="mb-0">Редактирование товара: <span th:text="${goods.name}" class="text-primary">Название</span></h5>
                 </div>
                 <div class="card-body">
-                    <form th:action="@{/seller/goods/edit/{id}(id=${goods.id})}" method="post" enctype="multipart/form-data">
-
+                    <form th:action="${goods.id == null ? '/seller/goods/add' : '/seller/goods/edit/' + goods.id}"
+                          method="post"
+                          enctype="multipart/form-data">
                         <div class="row mb-4">
                             <div class="col-md-4">
                                 <label class="form-label d-block">Текущее фото</label>

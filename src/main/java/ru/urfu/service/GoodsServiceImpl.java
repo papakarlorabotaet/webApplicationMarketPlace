@@ -44,7 +44,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     public void saveGoods(GoodsDto goodsDto, String email) {
-        User user = userRepository.findByEmail(email);
+        User user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
             throw new RuntimeException("Пользователь с email " + email + " не найден");
         }
@@ -186,7 +186,7 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     public void importGoods(MultipartFile file, String email) {
-        User seller = userRepository.findByEmail(email);
+        User seller = userRepository.findByEmail(email).orElse(null);
         List<Goods> goodsList = new ArrayList<>();
 
 
@@ -242,7 +242,7 @@ public class GoodsServiceImpl implements GoodsService {
         }
     }
 
-    // 🔥 Вспомогательный метод для расчёта рейтинга
+    //  Вспомогательный метод для расчёта рейтинга
     private Double calculateAverageRating(Goods goods) {
         Double avg = reviewRepository.getAverageRating(goods);
         return avg != null ? avg : 0.0;

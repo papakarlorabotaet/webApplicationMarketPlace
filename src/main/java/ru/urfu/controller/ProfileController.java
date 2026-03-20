@@ -52,7 +52,7 @@ public class ProfileController {
     public String uploadAvatar(@RequestParam("avatar") MultipartFile file,
                                @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
         String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
         Path path = Paths.get(uploadPath, filename);

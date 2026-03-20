@@ -2,6 +2,7 @@ package ru.urfu.entity;
 
 import lombok.Data;
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -20,7 +21,7 @@ public class Bid {
     @JoinColumn(name = "bidder_id", nullable = false)
     private User bidder; // Покупатель, сделавший ставку
 
-    private int amount; // Сумма ставки
+    private BigDecimal amount; // Сумма ставки
 
     private LocalDateTime bidTime = LocalDateTime.now();
 }

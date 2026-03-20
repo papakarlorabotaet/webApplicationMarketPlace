@@ -4,95 +4,286 @@
     <meta charset="UTF-8">
     <title>Аукционы</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .auction-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .auction-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+        }
+        .card-link-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+        .bid-actions {
+            position: relative;
+            z-index: 2;
+        }
+        .time-remaining-badge {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+    </style>
 </head>
 <body class="bg-light">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand" href="/">MarketPlace</a>
-        <div class="collapse navbar-collapse">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/list">Каталог</a></li>
-                <li class="nav-item"><a class="nav-link active" href="/auctions">Аукционы</a></li>
+
+<!-- Nav -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" th:href="@{/}">MARKETPLACE</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" th:href="@{/}">ГЛАВНАЯ</a></li>
+                <li class="nav-item" sec:authorize="isAuthenticated()">
+                    <a class="nav-link" href="/messages">СООБЩЕНИЯ
+                        <span class="badge bg-secondary" th:text="${unreadMessagesCount} ?: 0">0</span>
+                    </a>
+                </li>
+                <li class="nav-item"><a class="nav-link" th:href="@{/auctions}">АУКЦИОН</a></li>
+                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
+                    <a class="nav-link" th:href="@{/consumer/orders}">МОИ ЗАКАЗЫ</a></li>
+                <li class="nav-item" sec:authorize="isAnonymous()">
+                    <a class="nav-link btn btn-outline-light btn-sm ms-lg-2" th:href="@{/login}">ВОЙТИ</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
+                    <a class="nav-link" th:href="@{/cart}">КОРЗИНА
+                        <span class="badge bg-primary" th:text="${cartItemsCount}">0</span>
+                    </a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('CONSUMER')">
+                    <a class="nav-link" href="/consumer/payments">БАЛАНС
+                        <span class="badge bg-secondary" th:text="${balance}">0</span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                    <a class="nav-link dropdown-toggle" href="#" id="profileDrop" data-bs-toggle="dropdown">
+                        ЛИЧНЫЙ КАБИНЕТ
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <div sec:authorize="hasRole('CONSUMER')">
+                            <li><a class="dropdown-item" th:href="@{/consumer/profile}">Мой профиль</a></li>
+                        </div>
+                        <div sec:authorize="hasRole('SELLER')">
+                            <li><a class="dropdown-item" th:href="@{/seller/profile}">Панель продавца</a></li>
+                            <li><a class="dropdown-item" th:href="@{/seller/my-goods}">Мои товары</a></li>
+                        </div>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" th:href="@{/logout}">Выйти</a></li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </div>
 </nav>
 
-<main class="container">
-    <h2 class="mb-4">Активные торги</h2>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
+<main class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🔥 Активные торги</h2>
+        <a th:href="@{/seller/create-auction}" class="btn btn-primary" sec:authorize="hasRole('SELLER')">
+            + Создать аукцион
+        </a>
+    </div>
+
+    <!-- ✅ Проверка на пустой список -->
+    <div th:if="${auctions == null or auctions.empty}" class="alert alert-info text-center py-5">
+        <h4 class="mb-3">📭 Активных аукционов пока нет</h4>
+        <p class="mb-3">Заходите позже или создайте свой аукцион!</p>
+        <a th:href="@{/seller/create-auction}" class="btn btn-primary" sec:authorize="hasRole('SELLER')">
+            Создать аукцион
+        </a>
+    </div>
+
+    <!-- ✅ Список аукционов с кликабельными карточками -->
+    <div th:if="${auctions != null and !auctions.empty}" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         <div class="col" th:each="auction : ${auctions}">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
+            <div class="card h-100 shadow-sm auction-card position-relative">
+                <!-- ✅ Ссылка на детали аукциона (вся карточка кликабельна) -->
+                <a th:href="@{/auctions/{id}(id=${auction.id})}"
+                   class="card-link-overlay" title="Подробнее"></a>
+
+                <img th:src="${auction.goods.imagePath != null ? '/uploads/' + auction.goods.imagePath : '/images/no-image.png'}"
+                     class="card-img-top" alt="Товар" style="height: 200px; object-fit: cover;">
+
+                <div class="card-body bid-actions">
+                    <!-- Бейдж статуса -->
+                    <span class="badge bg-success time-remaining-badge mb-2" th:if="${auction.active}">Активен</span>
+                    <span class="badge bg-secondary time-remaining-badge mb-2" th:unless="${auction.active}">Завершён</span>
+
                     <h5 class="card-title" th:text="${auction.goods.name}">Товар</h5>
-                    <p class="text-muted">Начальная цена: <span th:text="${auction.startingPrice}"></span> ₽</p>
+                    <p class="text-muted small mb-2" th:text="${#strings.abbreviate(auction.goods.description, 80)}">Описание</p>
 
-                    <h4 class="text-primary">Текущая ставка: <span th:id="'price-' + ${auction.id}" th:text="${auction.currentHighestBid}"></span> ₽</h4>
-                    <p class="small text-muted" th:id="'bidder-' + ${auction.id}">Ждем ставок...</p>
-
-                    <div class="input-group">
-                        <input type="number" th:id="'bid-input-' + ${auction.id}" class="form-control" placeholder="Ваша ставка">
-                        <button class="btn btn-success" type="button" th:onclick="'sendBid(' + ${auction.id} + ')'">Ставка</button>
+                    <div class="mb-2">
+                        <small class="text-muted">Начальная цена:</small>
+                        <p class="mb-0" th:text="${auction.startingPrice} + ' ₽'">1000 ₽</p>
                     </div>
-                </div>
-                    </form>
+
+                    <!-- ✅ Текущая ставка -->
+                    <div class="mb-2">
+                        <small class="text-muted">Текущая ставка:</small>
+                        <h4 class="text-primary mb-0">
+                            <span th:id="'price-' + ${auction.id}"
+                                  th:text="${auction.currentHighestBid != null ? auction.currentHighestBid : auction.startingPrice}">0</span> ₽
+                        </h4>
+                    </div>
+
+                    <!-- ✅ Лидер аукциона -->
+                    <p class="small text-muted mb-2"
+                       th:id="'bidder-' + ${auction.id}"
+                       th:text="${auction.currentHighestBidder != null ? '👑 ' + auction.currentHighestBidder.name : '📭 Ждем ставок...'}">
+                        Ждем ставок...
+                    </p>
+
+                    <!-- ✅ Время до окончания -->
+                    <div class="mb-3" th:if="${auction.active}">
+                        <small class="text-muted">⏱ До окончания:</small>
+                        <p class="small fw-bold text-danger mb-0"
+                           th:id="'time-' + ${auction.id}"
+                           th:data-end-time="${#temporals.format(auction.endTime, 'yyyy-MM-dd HH:mm:ss')}">
+                            --:--:--
+                        </p>
+                    </div>
+
+                    <!-- ✅ Кнопки действий -->
+                    <div class="d-grid gap-2">
+                        <a th:href="@{/consumer/auctions/{id}(id=${auction.id})}"
+                           sec:authorize="hasRole('CONSUMER')"
+                           class="btn btn-outline-primary btn-sm">
+                            📋 Подробнее
+                        </a>
+                        <button class="btn btn-success btn-sm"
+                                th:onclick="'event.stopPropagation(); sendBid(' + ${auction.id} + ')'">
+                            💰 Сделать ставку
+                        </button>
+                    </div>
+
+                    <!-- ✅ Сообщения об успехе/ошибке -->
+                    <div th:if="${success}" class="alert alert-success mt-2 small py-1" th:text="${success}"></div>
+                    <div th:if="${error}" class="alert alert-danger mt-2 small py-1" th:text="${error}"></div>
                 </div>
             </div>
         </div>
     </div>
 </main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
+<!-- ✅ WebSocket скрипты -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
 <script th:inline="javascript">
+    // ✅ Список ID аукционов из контроллера
+    var auctionIds = /*[[${auctionIds}]]*/ [];
     var stompClient = null;
 
+    // ✅ Таймер обратного отсчёта для каждого аукциона
+    function updateTimers() {
+        auctionIds.forEach(function(auctionId) {
+            var timeElement = document.getElementById('time-' + auctionId);
+            if (timeElement) {
+                var endTimeStr = timeElement.getAttribute('data-end-time');
+                if (endTimeStr) {
+                    var endTime = new Date(endTimeStr.replace(' ', 'T'));
+                    var now = new Date();
+                    var diff = endTime - now;
+
+                    if (diff <= 0) {
+                        timeElement.innerText = 'Завершён';
+                        timeElement.classList.remove('text-danger');
+                        timeElement.classList.add('text-secondary');
+                    } else {
+                        var hours = Math.floor(diff / (1000 * 60 * 60));
+                        var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                        timeElement.innerText =
+                            (hours > 0 ? hours + ' ч. ' : '') +
+                            minutes + ' мин. ' +
+                            seconds + ' сек.';
+                    }
+                }
+            }
+        });
+    }
+
+    // ✅ Подключение к WebSocket
     function connect() {
         var socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
         stompClient.connect({}, function (frame) {
             console.log('Connected to Auction WS: ' + frame);
 
-            // Подписываемся на обновления всех аукционов, отображенных на странице
-            /*[[${auctions}]]*/.forEach(function(auction) {
-                stompClient.subscribe('/topic/auction/' + auction.id, function (update) {
+            // Подписываемся на каждый аукцион
+            auctionIds.forEach(function(auctionId) {
+                stompClient.subscribe('/topic/auction/' + auctionId, function (update) {
                     var data = JSON.parse(update.body);
                     updateAuctionUI(data);
                 });
             });
+
+            // Запускаем таймеры
+            setInterval(updateTimers, 1000);
+            updateTimers();
+        }, function (error) {
+            console.log('WebSocket connection failed: ' + error);
         });
     }
 
-    function sendBid(auctionId) {
-        var input = document.getElementById('bid-input-' + auctionId);
-        var amount = parseInt(input.value);
+    // ✅ Отправка ставки
+    function sendBid(auctionId, event) {
+        if (event) event.stopPropagation();
 
-        if (stompClient && amount) {
-            stompClient.send("/app/auction.bid/" + auctionId, {}, JSON.stringify(amount));
-            input.value = '';
+        var input = document.getElementById('bid-input-' + auctionId);
+        if (!input) {
+            // Если input нет, показываем модальное окно или переходим на страницу деталей
+            window.location.href = '/auctions/' + auctionId;
+            return;
         }
+
+        var amount = parseFloat(input.value);
+
+        if (!stompClient) {
+            alert('Нет соединения с сервером ставок!');
+            return;
+        }
+
+        if (!amount || amount <= 0) {
+            alert('Введите корректную сумму ставки!');
+            return;
+        }
+
+        stompClient.send("/app/auction.bid/" + auctionId, {}, JSON.stringify(amount));
+        input.value = '';
     }
 
+    // ✅ Обновление UI при новой ставке
     function updateAuctionUI(data) {
-        // Находим элементы в карточке конкретного аукциона по ID
         var priceElement = document.getElementById('price-' + data.auctionId);
         var bidderElement = document.getElementById('bidder-' + data.auctionId);
 
         if (priceElement) {
-            priceElement.innerText = data.newPrice;
-            // Можно добавить простую анимацию вспышки для наглядности
-            priceElement.style.color = 'red';
+            priceElement.innerText = data.amount;
+            priceElement.style.color = '#dc3545';
             setTimeout(() => { priceElement.style.color = '#0d6efd'; }, 1000);
         }
         if (bidderElement) {
-            bidderElement.innerText = 'Последняя ставка: ' + data.bidderName;
+            bidderElement.innerText = '👑 ' + (data.bidderName || 'Аноним');
         }
     }
 
-    connect();
+    // ✅ Авто-подключение при загрузке
+    document.addEventListener('DOMContentLoaded', function() {
+        if (auctionIds && auctionIds.length > 0) {
+            connect();
+        }
+    });
 </script>
 </body>
 </html>

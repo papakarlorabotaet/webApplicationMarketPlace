@@ -32,7 +32,7 @@ public class GlobalControllerAdvice {
     @ModelAttribute
     public void addGlobalAttributes(@AuthenticationPrincipal UserDetails userDetails, Model model) {
         if (userDetails != null) {
-            User user = userRepository.findByEmail(userDetails.getUsername());
+            User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
             if (user != null) {
                 // Считаем непрочитанные сообщения

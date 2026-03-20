@@ -62,6 +62,7 @@ public class Goods {
     @Column(name = "moderation_status")
     private GoodsStatus moderationStatus = GoodsStatus.PENDING;
 
+
     @OneToMany(mappedBy = "goods", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GoodsQuestion> questions = new ArrayList<>();
 

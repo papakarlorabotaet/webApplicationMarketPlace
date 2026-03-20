@@ -22,7 +22,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-
-        registry.addEndpoint("/ws").withSockJS();// Точка подключения к WebSocket
+        // Точка входа для подключения (в JS: new SockJS('/ws'))
+        registry.addEndpoint("/ws")
+                .withSockJS(); // Поддержка SockJS для браузеров без нативного WebSocket
     }
 }

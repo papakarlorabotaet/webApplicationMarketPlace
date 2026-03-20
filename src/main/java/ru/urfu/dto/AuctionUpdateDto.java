@@ -3,18 +3,18 @@ package ru.urfu.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
+
+import java.math.BigDecimal;
 
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @AllArgsConstructor
 public class AuctionUpdateDto {
-    private Long auctionId;
-    private int newPrice;
-    private String bidderName;
-
     // Геттеры
-    public Long getAuctionId() { return auctionId; }
-    public int getNewPrice() { return newPrice; }
-    public String getBidderName() { return bidderName; }
+    private Long auctionId;
+    private BigDecimal amount;
+    private String bidderName;
+    private Long bidderId;
+
+
 }

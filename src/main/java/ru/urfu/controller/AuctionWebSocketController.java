@@ -13,6 +13,7 @@ import ru.urfu.repository.AuctionRepository;
 import ru.urfu.repository.BidRepository;
 import ru.urfu.repository.UserRepository;
 
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDateTime;
 
@@ -37,13 +38,20 @@ public class AuctionWebSocketController {
     @MessageMapping("/auction.bid/{auctionId}")
     @SendTo("/topic/auction/{auctionId}")
     public AuctionUpdateDto placeBid(@DestinationVariable Long auctionId,
-                                     int amount,
+                                     BigDecimal amount,
                                      Principal principal) {
-        Auction auction = auctionRepository.findById(auctionId).orElseThrow();
-        User bidder = userRepository.findByEmail(principal.getName());
+        // 1. Извлекаем данные (Principal.getName() вернет email/usernam из Spring Security)
+        Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new RuntimeException("Аукцион не найден"));
+        User bidder = userRepository.findByEmail(principal.getName()).orElse(null);
 
-        // Валидация: ставка должна быть выше текущей
-        if (amount > auction.getCurrentHighestBid()) {
+        // 2. Логика проверки цены
+        BigDecimal currentMax = auction.getCurrentHighestBid() != null
+                ? auction.getCurrentHighestBid()
+                : BigDecimal.ZERO;
+
+        if (amount.compareTo(currentMax) > 0) {
+            // 3. Создаем ставку
             Bid bid = new Bid();
             bid.setAuction(auction);
             bid.setBidder(bidder);
@@ -51,13 +59,15 @@ public class AuctionWebSocketController {
             bid.setBidTime(LocalDateTime.now());
             bidRepository.save(bid);
 
+            // 4. Обновляем аукцион
             auction.setCurrentHighestBid(amount);
             auctionRepository.save(auction);
 
-            // Возвращаем данные для всех подписчиков темы /topic/auction/{id}
-            return new AuctionUpdateDto(auctionId, amount, bidder.getName());
+            // 5. Возвращаем DTO (в конструктор передаем имя, а не весь объект User)
+            return new AuctionUpdateDto(auctionId, amount, bidder.getName(), bidder.getId());
         }
-        return null; // Или вернуть ошибку
+
+        return null; // Если ставка слишком низкая, подписчики ничего не получат
     }
 }
 

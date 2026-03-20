@@ -52,7 +52,7 @@ public class SupportController {
         model.addAttribute("users", allUsers);
 
         // Передаем текущего админа для отображения в шапке
-        User currentUser = userRepository.findByEmail(userDetails.getUsername());
+        User currentUser = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         model.addAttribute("user", currentUser);
 
         return "support/users";
@@ -61,7 +61,7 @@ public class SupportController {
     @GetMapping("/deleteUser")
     public String deleteSeller(@RequestParam String userEmail,
                                @AuthenticationPrincipal UserDetails userDetails) {
-        User userDelete = userRepository.findByEmail(userEmail); //полчаем инфу
+        User userDelete = userRepository.findByEmail(userEmail).orElse(null); //полчаем инфу
 
         userService.deleteUserById(userDelete.getId()); //удаляем пользователя из базы
         return "redirect:/support/users";
@@ -76,7 +76,7 @@ public class SupportController {
 
     @GetMapping("/profile")
     public String supportProfile(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         model.addAttribute("user", user);
         long pendingCount = goodsService.findAllPendingGoods().size();// Добавляем счетчик для карточки статистики
         long pendingQuestionsCount = goodsQuestionService.findAllPendingQuestions().size();//добавляем счетчик для вопросов
@@ -89,7 +89,7 @@ public class SupportController {
     // Панель АДМИНА: Модерация
     @GetMapping("/orders")
     public String supportModeration(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         model.addAttribute("user", user);
         model.addAttribute("pendingGoods", goodsService.findAllPendingGoods());
         model.addAttribute("pendingGoodsCount", goodsService.findAllPendingGoods().size());
@@ -100,7 +100,7 @@ public class SupportController {
 
     @PostMapping("/orders/approve/{id}")
     public String approve(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
-        User admin = userRepository.findByEmail(userDetails.getUsername());
+        User admin = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         goodsService.updateStatus(id, GoodsStatus.APPROVED, admin);
         return "redirect:/support/orders";
     }
@@ -109,7 +109,7 @@ public class SupportController {
     // Действие АДМИНА: Отклонение
     @PostMapping("/orders/reject/{id}")
     public String reject(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
-        User admin = userRepository.findByEmail(userDetails.getUsername());
+        User admin = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         goodsService.updateStatus(id, GoodsStatus.REJECTED, admin);
         return "redirect:/support/orders";
     }
@@ -119,7 +119,7 @@ public class SupportController {
     // Страница со списком вопросов, ожидающих модерации
     @GetMapping("/questions")
     public String supportQuestionsModeration(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         model.addAttribute("user", user);
 
 
@@ -146,7 +146,7 @@ public class SupportController {
     @GetMapping("/payments/user/{email}")
     public String getUserPayments(@PathVariable String email, Model model) {
         // Получаем платежи только для этого пользователя
-        List<Transaction> userTransactions = transactionRepository.findByUserAndStatus(userRepository.findByEmail(email), TransactionStatusEnum.PENDING);
+        List<Transaction> userTransactions = transactionRepository.findByUserAndStatus(userRepository.findByEmail(email).orElse(null), TransactionStatusEnum.PENDING);
 
         model.addAttribute("pendingDeposits", userTransactions);
         model.addAttribute("targetUser", email); // Чтобы отобразить в заголовке, чьи это платежи

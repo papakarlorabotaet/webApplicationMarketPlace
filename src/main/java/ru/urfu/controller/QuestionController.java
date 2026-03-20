@@ -31,7 +31,7 @@ public class QuestionController {
     public String addQuestion(@RequestParam Long goodsId,
                               @RequestParam String text,
                               @AuthenticationPrincipal UserDetails userDetails) {
-        User author = userRepository.findByEmail(userDetails.getUsername());
+        User author = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         Goods goods = goodsRepository.findById(goodsId).orElseThrow();
 
         GoodsQuestion question = new GoodsQuestion();

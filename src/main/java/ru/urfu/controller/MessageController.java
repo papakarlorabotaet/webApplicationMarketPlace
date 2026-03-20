@@ -25,7 +25,7 @@ public class MessageController {
     // Список диалогов пользователя
     @GetMapping
     public String myMessages(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         model.addAttribute("messages", messageRepository.findAllRecentDialogs(user.getId()));
         return "messages/list";
     }
@@ -35,7 +35,7 @@ public class MessageController {
     public String sendMessage(@RequestParam Long receiverId,
                               @RequestParam String content,
                               @AuthenticationPrincipal UserDetails userDetails) {
-        User sender = userRepository.findByEmail(userDetails.getUsername());
+        User sender = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         User receiver = userRepository.findById(receiverId).orElseThrow();
 
         Message msg = new Message();
@@ -51,7 +51,7 @@ public class MessageController {
     public String openChat(@PathVariable Long companionId,
                            @AuthenticationPrincipal UserDetails userDetails,
                            Model model) {
-        User currentUser = userRepository.findByEmail(userDetails.getUsername());
+        User currentUser = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
         User companion = userRepository.findById(companionId).orElseThrow();
 
         // 1. Помечаем входящие сообщения от этого собеседника как прочитанные

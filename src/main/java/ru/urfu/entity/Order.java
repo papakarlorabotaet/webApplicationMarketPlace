@@ -24,12 +24,17 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> items;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coupon_id")
+    private Coupon coupon;
+
 
     private int quantity;
 
     private BigDecimal totalPrice;
 
     private String status;// например, "Оплачен", "Отправлен"
+
 
 
 

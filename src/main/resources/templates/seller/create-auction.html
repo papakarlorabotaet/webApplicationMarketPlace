@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Создание аукциона | Панель продавца</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .product-card { border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .auction-form-header { background: #f8f9fa; border-bottom: 2px solid #dee2e6; padding: 20px; }
+        .goods-preview-img { max-height: 200px; object-fit: contain; }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/seller/profile}">Профиль</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/seller/my-goods}">Мои товары</a></li>
+            <li class="breadcrumb-item active">Создание аукциона</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card product-card">
+                <div class="auction-form-header text-center">
+                    <h2 class="mb-0">Запуск аукциона</h2>
+                    <p class="text-muted">Выставляем товар: <strong th:text="${goods.name}">Название товара</strong></p>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-4 text-center">
+                            <img th:src="${goods.imagePath != null ? '/uploads/' + goods.imagePath : 'https://via.placeholder.com/300x200'}"
+                                 class="card-img-top" alt="Товар">
+                        </div>
+                        <div class="col-md-8">
+                            <h5>Описание товара</h5>
+                            <p th:text="${goods.description}" class="text-muted small">Описание...</p>
+                            <p>Текущая цена в магазине: <span th:text="${goods.price} + ' ₽'" class="fw-bold text-primary">0 ₽</span></p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <form th:action="@{/seller/auction/create}" method="post">
+                        <input type="hidden" name="goodsId" th:value="${goods.id}">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="startingPrice" class="form-label">Начальная цена (₽)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₽</span>
+                                    <input type="number" class="form-control" id="startingPrice"
+                                           name="startingPrice" th:value="${goods.price}" required min="1">
+                                </div>
+                                <div class="form-text">Цена, с которой начнутся торги.</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="durationHours" class="form-label">Длительность (в часах)</label>
+                                <select class="form-select" id="durationHours" name="durationHours" required>
+                                    <option value="1">1 час</option>
+                                    <option value="6">6 часов</option>
+                                    <option value="12">12 часов</option>
+                                    <option value="24" selected>24 часа</option>
+                                    <option value="48">2 дня (48 ч.)</option>
+                                    <option value="168">Неделя (168 ч.)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> После запуска аукциона товар будет временно недоступен для обычной покупки.
+                                </div>
+                            </div>
+
+                            <div class="col-12 d-grid gap-2 mt-3">
+                                <button type="submit" class="btn btn-primary btn-lg">Запустить торги</button>
+                                <a th:href="@{/seller/my-goods}" class="btn btn-outline-secondary">Отмена</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

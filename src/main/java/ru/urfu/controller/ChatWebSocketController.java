@@ -32,7 +32,7 @@ public class ChatWebSocketController {
     // Когда клиент отправляет сообщение на /app/chat.sendMessage
     @MessageMapping("/chat.sendMessage")
     public void processMessage(@Payload MessageDto messageDto, Principal principal) {
-        User sender = userRepository.findByEmail(principal.getName());
+        User sender = userRepository.findByEmail(principal.getName()).orElse(null);
         User receiver = userRepository.findById(messageDto.getReceiverId()).orElseThrow();
 
         // 1. Сохраняем в базу, чтобы история осталась

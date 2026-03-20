@@ -15,14 +15,16 @@ import java.util.Optional;
 
 @Service
 public class CartService {
-    private final CartRepository cartRepository;
-    private final CartItemRepository cartItemRepository;
-    private final GoodsRepository goodsRepository;
 
-    public CartService(CartRepository cartRepository, CartItemRepository cartItemRepository, GoodsRepository goodsRepository) {
+    private final CartRepository cartRepository;
+    private final GoodsRepository goodsRepository;
+    private final CartItemRepository cartItemRepository;
+
+    public CartService(CartRepository cartRepository, GoodsRepository goodsRepository, CartItemRepository cartItemRepository) {
+
         this.cartRepository = cartRepository;
-        this.cartItemRepository = cartItemRepository;
         this.goodsRepository = goodsRepository;
+        this.cartItemRepository = cartItemRepository;
     }
 
     public Cart getCartByUser(User user) {

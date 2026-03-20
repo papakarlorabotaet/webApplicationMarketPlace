@@ -25,7 +25,7 @@ public class CartController {
     @GetMapping
     public String viewCart(@AuthenticationPrincipal UserDetails userDetails, Model model) {
 
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
         Cart cart = cartService.getCartByUser(user);
 
@@ -41,7 +41,7 @@ public class CartController {
                             @RequestParam Long goodsId,
                             @RequestParam(defaultValue = "1") int quantity) {
 
-        User user = userRepository.findByEmail(userDetails.getUsername());
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElse(null);
 
         cartService.addToCart(user, goodsId, quantity);
 
